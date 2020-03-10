@@ -1,0 +1,37 @@
+{
+  "name": "haplotype-reconstruction",
+  "version": "0.0.1",
+  "main": "index.js",
+  "repository": "bioviz-js-template",
+  "author": "Stephen Shank <sshank314@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/core": "^7.7.7",
+    "@babel/preset-react": "^7.7.4",
+    "babel-loader": "^8.0.6",
+    "css-loader": "^3.4.1",
+    "html-webpack-plugin": "^3.2.0",
+    "sass": "^1.24.3",
+    "sass-loader": "^8.0.0",
+    "style-loader": "^1.1.2",
+    "supervisor": "^0.12.0",
+    "webpack": "^4.41.5",
+    "webpack-cli": "^3.3.10",
+    "webpack-dev-server": "^3.10.1"
+  },
+  "dependencies": {
+    "alignment.js": "0.2.1",
+    "axios": "^0.19.1",
+    "bootstrap": "^4.4.1",
+    "d3": "^5.15.0",
+    "d3-react-axis": "^0.0.2",
+    "react": "^16.12.0",
+    "react-bootstrap": "^1.0.0-beta.16",
+    "react-dom": "^16.12.0",
+    "react-phylotree": "^0.4.1",
+    "react-router-dom": "^5.1.2"
+  },
+  "scripts": {
+    "develop": "npx webpack-dev-server --open"
+  }
+}
