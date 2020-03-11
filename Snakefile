@@ -1,4 +1,32 @@
+import csv
+
+import numpy as np
 from Bio import SeqIO
+
+
+def indicial_mapping(original, added, indicial_map):
+  original_records = list(sorted(
+    SeqIO.parse(original, 'fasta'),
+    key=lambda record: record.name
+  ))
+  added_hash = SeqIO.to_dict(SeqIO.parse(added, 'fasta'))
+  original_np = np.array([
+    list(str(record.seq)) for record in original_records
+  ], dtype='<U1')
+  added_np = np.array([
+    list(str(added_hash[record.name].seq)) for record in original_records
+  ], dtype='<U1')
+
+  csv_file = open(indicial_map, 'w')
+  writer = csv.writer(csv_file)
+  writer.writerow(['current_index', 'original_index'])
+
+  original_index = 0
+  for added_index in range(added_np.shape[1]):
+    if np.all(original_np[:, original_index] == added_np[:, added_index]):
+      writer.writerow([added_index, original_index])
+      original_index += 1
+  csv_file.close()
 
 def translate(input_file, output_file):
   f = list(SeqIO.parse(input_file, 'fasta'))
@@ -45,3 +73,12 @@ rule full_alignment:
     'public/output/{dataset}-full.fasta'
   shell:
     "mafft --add {input.pdb} {input.msa} > {output}"
+
+rule indicial_map:
+  input:
+    original=rules.amino_acid_fasta.output[0],
+    added=rules.full_alignment.output[0]
+  output:
+    'public/output/{dataset}-map.csv'
+  run:
+    indicial_mapping(input.original, input.added, output[0])
