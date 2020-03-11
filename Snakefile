@@ -37,3 +37,11 @@ rule amino_acid_fasta:
   run:
     translate(input[0], output[0])
 
+rule full_alignment:
+  input:
+    msa=rules.amino_acid_fasta.output[0],
+    pdb='public/input/6vxx_entry.fasta'
+  output:
+    'public/output/{dataset}-full.fasta'
+  shell:
+    "mafft --add {input.pdb} {input.msa} > {output}"

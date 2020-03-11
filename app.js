@@ -5,6 +5,7 @@ import ScrollBroadcaster from "alignment.js/helpers/ScrollBroadcaster";
 import { phylotree } from "phylotree";
 import { nucleotide_color } from "alignment.js/helpers/colors";
 import BaseAlignment from "alignment.js/components/BaseAlignment";
+import { BaseSequenceAxis } from "alignment.js/components/SequenceAxis";
 import Placeholder from "alignment.js/components/Placeholder";
 import SiteAxis from "alignment.js/components/SiteAxis";
 import fastaParser from "alignment.js/helpers/fasta";
@@ -23,17 +24,20 @@ function Visualization(props) {
   if(!props.data) return <div />;
   const { fubar, fasta, pdb } = props.data,
     sequence_data = fastaParser(fasta),
+    number_of_sequences = sequence_data.length,
+    pdb_sequence = [sequence_data[number_of_sequences - 1]],
+    remaining_data = sequence_data.slice(0, number_of_sequences - 1),
     tree = new phylotree(fubar.input.trees['0']),
     width = 2400,
     tree_width = 1200,
     height = 1000,
     structure_height = 500,
     site_size = 20,
-    padding = 10,
+    padding = site_size / 2,
     full_pixel_width = sequence_data
       ? sequence_data[0].seq.length * site_size
       : null,
-    full_pixel_height = sequence_data ? sequence_data.length * site_size : null,
+    full_pixel_height = sequence_data ? remaining_data.length * site_size : null,
     alignment_width = full_pixel_width
       ? Math.min(full_pixel_width, width - tree_width)
       : width,
@@ -47,6 +51,7 @@ function Visualization(props) {
       y_pad: height - structure_height,
       bidirectional: [
         "alignmentjs-alignment",
+        "pdb-alignment",
         "alignmentjs-axis-div"
       ]
     }),
@@ -57,7 +62,7 @@ function Visualization(props) {
       quality : 'medium',
       background: '#FFF'
     };
-  sortFASTAAndNewick(sequence_data, tree);
+  sortFASTAAndNewick(remaining_data, tree);
   useEffect(() => {
     const structure_div = document.getElementById('structure'),
       viewer = pv.Viewer(structure_div, structure_options),
@@ -70,7 +75,7 @@ function Visualization(props) {
     <div
       style={{
         display: "grid",
-        gridTemplateRows: `${structure_height}px ${alignment_height}px`,
+        gridTemplateRows: `${structure_height}px ${site_size}px ${alignment_height}px`,
         gridTemplateColumns: `${tree_width}px ${alignment_width}px`
       }}
     >
@@ -82,6 +87,30 @@ function Visualization(props) {
         sequence_data={sequence_data}
         scroll_broadcaster={scroll_broadcaster}
       />
+      <div>
+        <svg width={tree_width} height={site_size}>
+          <BaseSequenceAxis
+            translateY={-4}
+            sequence_data={pdb_sequence}
+            label_padding={5}
+            site_size={site_size}
+            width={tree_width}
+          />
+        </svg>
+      </div>
+      <div>
+        <BaseAlignment
+          sequence_data={pdb_sequence}
+          width={alignment_width}
+          height={site_size}
+          site_size={site_size}
+          site_color={nucleotide_color}
+          scroll_broadcaster={scroll_broadcaster}
+          molecule={molecule}
+          id={'pdb'}
+          amino_acid
+        />
+      </div>
       <div>
         <svg width={tree_width} height={alignment_height}>
           <g transform={`translate(${padding}, ${padding})`}>
@@ -99,7 +128,7 @@ function Visualization(props) {
         </svg>
       </div>
       <BaseAlignment
-        sequence_data={sequence_data}
+        sequence_data={remaining_data}
         width={alignment_width}
         height={alignment_height}
         site_size={site_size}
@@ -117,7 +146,7 @@ function App() {
   useEffect(() => {
     Promise.all([
       d3.json('output/S.fna.FUBAR.json'),
-      d3.text('output/S-AA.fasta'),
+      d3.text('output/S-full.fasta'),
       d3.text('input/pdb6vxx.ent')
     ]).then(data => {
       setData({
