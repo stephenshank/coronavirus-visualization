@@ -11,6 +11,7 @@ import fastaParser from "alignment.js/helpers/fasta";
 import sortFASTAAndNewick from "alignment.js/helpers/jointSort.js";
 import StopWobbling from "alignment.js/prevent_default_patch";
 import * as d3 from "d3";
+import pv from "bio-pv";
 
 import "./styles.scss";
 
@@ -20,13 +21,13 @@ function molecule(mol) {
 
 function Visualization(props) {
   if(!props.data) return <div />;
-  const { absrel, gard, fasta } = props.data,
+  const { absrel, gard, fasta, pdb } = props.data,
     sequence_data = fastaParser(fasta),
     tree = new phylotree(absrel.input.trees['0']),
     width = 2400,
     tree_width = 1200,
-    height = 500,
-    axis_height = 25,
+    height = 1000,
+    structure_height = 500,
     site_size = 20,
     padding = 10,
     full_pixel_width = sequence_data
@@ -37,31 +38,47 @@ function Visualization(props) {
       ? Math.min(full_pixel_width, width - tree_width)
       : width,
     alignment_height = full_pixel_height
-      ? Math.min(full_pixel_height, height - axis_height)
+      ? Math.min(full_pixel_height, height - structure_height)
       : height,
     scroll_broadcaster = new ScrollBroadcaster({
       width: full_pixel_width,
       height: full_pixel_height,
       x_pad: width - tree_width,
-      y_pad: height - axis_height,
+      y_pad: height - structure_height,
       bidirectional: [
         "alignmentjs-alignment",
         "alignmentjs-axis-div"
       ]
-    });
+    }),
+    structure_options = {
+      width: tree_width,
+      height: structure_height,
+      antialias: true,
+      quality : 'medium',
+      background: '#FFF'
+    };
   sortFASTAAndNewick(sequence_data, tree);
+  useEffect(() => {
+    const structure_div = document.getElementById('structure'),
+      viewer = pv.Viewer(structure_div, structure_options),
+      structure = pv.io.pdb(pdb, structure_options),
+      chain = structure.select({chain: 'A'}),
+      geom = viewer.cartoon('protein', chain);
+    viewer.autoZoom();
+  }, []);
   return (
     <div
       style={{
         display: "grid",
-        gridTemplateRows: `${axis_height}px ${alignment_height}px`,
+        gridTemplateRows: `${structure_height}px ${alignment_height}px`,
         gridTemplateColumns: `${tree_width}px ${alignment_width}px`
       }}
     >
-      <Placeholder width={tree_width} height={axis_height} />
+      <div id='structure'>
+      </div>
       <SiteAxis
         width={alignment_width}
-        height={axis_height}
+        height={structure_height}
         sequence_data={sequence_data}
         scroll_broadcaster={scroll_broadcaster}
       />
@@ -101,12 +118,14 @@ function App() {
     Promise.all([
       d3.json('S.fna.ABSREL.json'),
       d3.json('S.fna.GARD.json'),
-      d3.text('S-AA.fasta')
+      d3.text('S-AA.fasta'),
+      d3.text('pdb6vxx.ent')
     ]).then(data => {
       setData({
         absrel: data[0],
         gard: data[1],
-        fasta: data[2]
+        fasta: data[2],
+        pdb: data[3]
       });
     });
   }, []);
