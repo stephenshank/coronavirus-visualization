@@ -2,12 +2,14 @@ import React, { useState, useEffect } from "react";
 import Phylotree from "react-phylotree";
 import ReactDOM from "react-dom";
 import ScrollBroadcaster from "alignment.js/helpers/ScrollBroadcaster";
+import { phylotree } from "phylotree";
 import { nucleotide_color } from "alignment.js/helpers/colors";
 import BaseAlignment from "alignment.js/components/BaseAlignment";
 import Placeholder from "alignment.js/components/Placeholder";
 import SiteAxis from "alignment.js/components/SiteAxis";
+import fastaParser from "alignment.js/helpers/fasta";
+import sortFASTAAndNewick from "alignment.js/helpers/jointSort.js";
 import StopWobbling from "alignment.js/prevent_default_patch";
-import { fnaParser } from "alignment.js/helpers/fasta";
 import * as d3 from "d3";
 
 import "./styles.scss";
@@ -18,8 +20,9 @@ function molecule(mol) {
 
 function Visualization(props) {
   if(!props.data) return <div />;
-  const { absrel, gard, fna } = props.data,
-    { sequence_data, tree } = fnaParser(fna, true),
+  const { absrel, gard, fasta } = props.data,
+    sequence_data = fastaParser(fasta),
+    tree = new phylotree(absrel.input.trees['0']),
     width = 2400,
     tree_width = 1200,
     height = 500,
@@ -46,6 +49,7 @@ function Visualization(props) {
         "alignmentjs-axis-div"
       ]
     });
+  sortFASTAAndNewick(sequence_data, tree);
   return (
     <div
       style={{
@@ -69,6 +73,9 @@ function Visualization(props) {
               width={tree_width - 2*padding}
               height={alignment_height - 2*padding}
               maxLabelWidth={100}
+              accessor={node => {
+                return null;
+              }}
               alignTips="right"
             />
           </g>
@@ -94,12 +101,12 @@ function App() {
     Promise.all([
       d3.json('S.fna.ABSREL.json'),
       d3.json('S.fna.GARD.json'),
-      d3.text('S.fna')
+      d3.text('S-AA.fasta')
     ]).then(data => {
       setData({
         absrel: data[0],
         gard: data[1],
-        fna: data[2]
+        fasta: data[2]
       });
     });
   }, []);
