@@ -21,9 +21,9 @@ function molecule(mol) {
 
 function Visualization(props) {
   if(!props.data) return <div />;
-  const { absrel, gard, fasta, pdb } = props.data,
+  const { fubar, fasta, pdb } = props.data,
     sequence_data = fastaParser(fasta),
-    tree = new phylotree(absrel.input.trees['0']),
+    tree = new phylotree(fubar.input.trees['0']),
     width = 2400,
     tree_width = 1200,
     height = 1000,
@@ -62,7 +62,7 @@ function Visualization(props) {
     const structure_div = document.getElementById('structure'),
       viewer = pv.Viewer(structure_div, structure_options),
       structure = pv.io.pdb(pdb, structure_options),
-      chain = structure.select({chain: 'A'}),
+      chain = structure.select(),
       geom = viewer.cartoon('protein', chain);
     viewer.autoZoom();
   }, []);
@@ -116,16 +116,14 @@ function App() {
   const [data, setData] = useState(null);
   useEffect(() => {
     Promise.all([
-      d3.json('S.fna.ABSREL.json'),
-      d3.json('S.fna.GARD.json'),
-      d3.text('S-AA.fasta'),
-      d3.text('pdb6vxx.ent')
+      d3.json('output/S.fna.FUBAR.json'),
+      d3.text('output/S-AA.fasta'),
+      d3.text('input/pdb6vxx.ent')
     ]).then(data => {
       setData({
-        absrel: data[0],
-        gard: data[1],
-        fasta: data[2],
-        pdb: data[3]
+        fubar: data[0],
+        fasta: data[1],
+        pdb: data[2]
       });
     });
   }, []);

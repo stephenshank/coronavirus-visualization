@@ -3,3 +3,5 @@ yalc*
 yarn-error.log
 public/index.html
 public/main.js
+.snakemake
+messages.log
