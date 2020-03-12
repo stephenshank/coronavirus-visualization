@@ -560,22 +560,21 @@ ajv@^6.1.0, ajv@^6.10.2, ajv@^6.5.5:
     json-schema-traverse "^0.4.1"
     uri-js "^4.2.2"
 
-alignment.js@0.2.1:
-  version "0.2.1"
-  resolved "https://registry.yarnpkg.com/alignment.js/-/alignment.js-0.2.1.tgz#e83ff9add8e220dc711f914fa5b020540735ec0a"
-  integrity sha512-GdlqfP2uabraXuiy4GJkEqkxfDNV1DW4B01DGiuqFbeuDl1y00NQ3lWk+AaJnxxllVCRPwi6AaVjj9N9yQOY9w==
+"alignment.js@file:.yalc/alignment.js":
+  version "0.2.1-12ece0d4"
   dependencies:
     "@gmod/bam" "^1.0.18"
     bootstrap "^4.1.1"
     d3 "5"
+    d3-react-axis "^0.0.3"
     d3-save-svg "^0.0.2"
     express "^4.16.4"
     file-saver "^2.0.0"
     jquery "^3.3.1"
     phylotree "1.0.0-alpha.17"
     popper.js "^1.14.3"
-    react "^16.2.0"
-    react-dom "^16.2.0"
+    react "16.12.0"
+    react-dom "16.12.0"
     react-phylotree "0.1.0"
     react-router-dom "^4.3.1"
     sass "^1.26.2"
@@ -1818,19 +1817,12 @@ d3-random@1:
   resolved "https://registry.yarnpkg.com/d3-random/-/d3-random-1.1.2.tgz#2833be7c124360bf9e2d3fd4f33847cfe6cab291"
   integrity sha512-6AK5BNpIFqP+cx/sreKzNjWbwZQCSUatxq+pPRmFIQaWuoD+NrbVWw7YWpHiXpCQ/NanKdtGDuB+VQcZDaEmYQ==
 
-d3-react-axis@0.0.3:
+d3-react-axis@0.0.3, d3-react-axis@^0.0.3:
   version "0.0.3"
   resolved "https://registry.yarnpkg.com/d3-react-axis/-/d3-react-axis-0.0.3.tgz#416c555af7e8cab27977532c69c1f95deb82822a"
   integrity sha512-0ACWKkNoIVV1+LMM8ohgwmJvOd7+xXDneYE4YlbeCVGK/QcpLrO9bWoUWhY9cKxRlIXes3JGFVGPzcf88aVwLg==
   dependencies:
     d3-axis "^1.0.12"
-    react "^16.12.0"
-
-d3-react-axis@^0.0.2:
-  version "0.0.2"
-  resolved "https://registry.yarnpkg.com/d3-react-axis/-/d3-react-axis-0.0.2.tgz#f3a9e52c9ad94dcdfbdca4a98349297a4c87bc16"
-  integrity sha512-losdXi/6fWEUXdUyv2jR5RFTmI8V+Nsf5Wen+THpI10uDCoSs9OjI++pbpRjRWFPnti2rOvW/M0R2tplof2DOQ==
-  dependencies:
     react "^16.12.0"
 
 d3-save-svg@^0.0.2:
@@ -3612,7 +3604,7 @@ isstream@~0.1.2:
   resolved "https://registry.yarnpkg.com/isstream/-/isstream-0.1.2.tgz#47e63f7af55afa6f92e1500e690eb8b8529c099a"
   integrity sha1-R+Y/evVa+m+S4VAOaQ64uFKcCZo=
 
-jquery@3, jquery@^3.3.1:
+jquery@3, jquery@^3.3.1, jquery@^3.4.1:
   version "3.4.1"
   resolved "https://registry.yarnpkg.com/jquery/-/jquery-3.4.1.tgz#714f1f8d9dde4bdfa55764ba37ef214630d80ef2"
   integrity sha512-36+AdBzCL+y6qjw5Tx7HgzeGCzC81MDDgaUP8ld2zhx58HdqXGoBd+tHdrBMiyjGQs0Hxs/MLZTu/eHNJJuWPw==
@@ -4921,7 +4913,7 @@ react-dom@16.12.0:
     prop-types "^15.6.2"
     scheduler "^0.18.0"
 
-react-dom@^16.2.0, react-dom@^16.6.3:
+react-dom@^16.6.3:
   version "16.13.0"
   resolved "https://registry.yarnpkg.com/react-dom/-/react-dom-16.13.0.tgz#cdde54b48eb9e8a0ca1b3dc9943d9bb409b81866"
   integrity sha512-y09d2c4cG220DzdlFkPTnVvGTszVvNpC73v+AaLGLHbkpy3SSgvYq8x0rNwPJ/Rk/CicTNgk0hbHNw1gMEZAXg==
@@ -5059,7 +5051,7 @@ react@16.12.0:
     object-assign "^4.1.1"
     prop-types "^15.6.2"
 
-react@^16.12.0, react@^16.2.0, react@^16.6.3:
+react@^16.12.0, react@^16.6.3:
   version "16.13.0"
   resolved "https://registry.yarnpkg.com/react/-/react-16.13.0.tgz#d046eabcdf64e457bbeed1e792e235e1b9934cf7"
   integrity sha512-TSavZz2iSLkq5/oiE7gnFzmURKZMltmi193rm5HEoUDAXpzT9Kzw6oNZnGoai/4+fUnm7FqS5dwgUL34TujcWQ==
@@ -5365,10 +5357,17 @@ sass-loader@^8.0.0:
     schema-utils "^2.6.1"
     semver "^6.3.0"
 
-sass@^1.24.3, sass@^1.26.2:
+sass@^1.24.3:
   version "1.26.2"
   resolved "https://registry.yarnpkg.com/sass/-/sass-1.26.2.tgz#4e17c5c2394e2ee7ffd653ac1d862314a6a5767b"
   integrity sha512-9TRp1d1NH0mWH8rqaR/jCS05f/TFD1ykPF2zSYviprMhLb0EmXVqtKMUHsvDt3YIT/jbSK6qAvUlfCW/HJkdCw==
+  dependencies:
+    chokidar ">=2.0.0 <4.0.0"
+
+sass@^1.26.2:
+  version "1.26.3"
+  resolved "https://registry.yarnpkg.com/sass/-/sass-1.26.3.tgz#412df54486143b76b5a65cdf7569e86f44659f46"
+  integrity sha512-5NMHI1+YFYw4sN3yfKjpLuV9B5l7MqQ6FlkTcC4FT+oHbBRUZoSjHrrt/mE0nFXJyY2kQtU9ou9HxvFVjLFuuw==
   dependencies:
     chokidar ">=2.0.0 <4.0.0"
 

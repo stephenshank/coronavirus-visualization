@@ -7,7 +7,8 @@ import { nucleotide_color } from "alignment.js/helpers/colors";
 import BaseAlignment from "alignment.js/components/BaseAlignment";
 import { BaseSequenceAxis } from "alignment.js/components/SequenceAxis";
 import Placeholder from "alignment.js/components/Placeholder";
-import SiteAxis from "alignment.js/components/SiteAxis";
+import $ from "jquery";
+import { AxisBottom } from "d3-react-axis";
 import fastaParser from "alignment.js/helpers/fasta";
 import sortFASTAAndNewick from "alignment.js/helpers/jointSort.js";
 import StopWobbling from "alignment.js/prevent_default_patch";
@@ -25,6 +26,7 @@ function Visualization(props) {
   const { fubar, fasta, pdb } = props.data,
     sequence_data = fastaParser(fasta),
     number_of_sequences = sequence_data.length,
+    { number_of_sites } = sequence_data,
     pdb_sequence = [sequence_data[number_of_sequences - 1]],
     remaining_data = sequence_data.slice(0, number_of_sequences - 1),
     tree = new phylotree(fubar.input.trees['0']),
@@ -44,6 +46,10 @@ function Visualization(props) {
     alignment_height = full_pixel_height
       ? Math.min(full_pixel_height, height - structure_height)
       : height,
+    axis_scale = d3.scaleLinear()
+      .domain([1, number_of_sites])
+      .range([site_size / 2, full_pixel_width - site_size / 2]),
+    tickValues = d3.range(1, number_of_sites, 2),
     scroll_broadcaster = new ScrollBroadcaster({
       width: full_pixel_width,
       height: full_pixel_height,
@@ -52,7 +58,7 @@ function Visualization(props) {
       bidirectional: [
         "alignmentjs-alignment",
         "pdb-alignment",
-        "alignmentjs-axis-div"
+        "hyphy-chart-div"
       ]
     }),
     structure_options = {
@@ -70,6 +76,11 @@ function Visualization(props) {
       chain = structure.select(),
       geom = viewer.cartoon('protein', chain);
     viewer.autoZoom();
+    document
+      .getElementById('hyphy-chart-div')
+      .addEventListener("alignmentjs_wheel_event", function(e) {
+        $('#hyphy-chart-div').scrollLeft(e.detail.x_pixel);
+      });
   }, []);
   return (
     <div
@@ -81,12 +92,19 @@ function Visualization(props) {
     >
       <div id='structure'>
       </div>
-      <SiteAxis
-        width={alignment_width}
-        height={structure_height}
-        sequence_data={sequence_data}
-        scroll_broadcaster={scroll_broadcaster}
-      />
+      <div
+        id='hyphy-chart-div'
+        style={{overflowX: "scroll"}}
+        onWheel={e => this.handleHyPhyWheel(e)}
+      >
+        <svg width={full_pixel_width} height={structure_height}>
+          <AxisBottom 
+            scale={axis_scale}
+            tickValues={tickValues}
+            transform={`translate(0, ${structure_height - 20})`}
+          />
+        </svg>
+      </div>
       <div>
         <svg width={tree_width} height={site_size}>
           <BaseSequenceAxis
@@ -158,7 +176,7 @@ function App() {
   }, []);
   return (<div>
     <h1>HyPhy Coronavirus Evolution</h1>
-    <Visualization data={data} />
+    {data ? <Visualization data={data} /> : null}
   </div>);
 }
 

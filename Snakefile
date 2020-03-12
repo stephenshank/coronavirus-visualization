@@ -82,3 +82,14 @@ rule indicial_map:
     'public/output/{dataset}-map.csv'
   run:
     indicial_mapping(input.original, input.added, output[0])
+
+rule full_dataset:
+  input:
+    rules.full_alignment.output[0],
+    rules.fubar.output[0],
+    rules.indicial_map.output[0]
+  output:
+    "public/output/{dataset}.txt"
+  run:
+    with open(output[0], 'w') as f:
+      f.write('Ready')
