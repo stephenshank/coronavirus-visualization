@@ -35,6 +35,7 @@ function Visualization(props) {
     height = 1000,
     structure_height = 500,
     site_size = 20,
+    axis_height = 20,
     padding = site_size / 2,
     full_pixel_width = sequence_data
       ? sequence_data[0].seq.length * site_size
@@ -50,6 +51,13 @@ function Visualization(props) {
       .domain([1, number_of_sites])
       .range([site_size / 2, full_pixel_width - site_size / 2]),
     tickValues = d3.range(1, number_of_sites, 2),
+    line_data = fubar.MLE.content['0'].map(d => d[2]),
+    line_scale = d3.scaleLinear()
+      .domain(d3.extent(line_data))
+      .range([structure_height - axis_height, 0]),
+    line = d3.line()
+      .x((d, i) => i * (site_size-.5))
+      .y(d => line_scale(d)),
     scroll_broadcaster = new ScrollBroadcaster({
       width: full_pixel_width,
       height: full_pixel_height,
@@ -98,10 +106,16 @@ function Visualization(props) {
         onWheel={e => this.handleHyPhyWheel(e)}
       >
         <svg width={full_pixel_width} height={structure_height}>
+          <path
+            stroke='red'
+            strokeWidth={2}
+            d={line(line_data)}
+            fill='none'
+          />
           <AxisBottom 
             scale={axis_scale}
             tickValues={tickValues}
-            transform={`translate(0, ${structure_height - 20})`}
+            transform={`translate(0, ${structure_height - axis_height})`}
           />
         </svg>
       </div>
@@ -165,7 +179,8 @@ function App() {
     Promise.all([
       d3.json('output/S.fna.FUBAR.json'),
       d3.text('output/S-full.fasta'),
-      d3.text('input/pdb6vxx.ent')
+      d3.text('input/pdb6vxx.ent'),
+      d3.csv('output/S-map.csv')
     ]).then(data => {
       setData({
         fubar: data[0],
