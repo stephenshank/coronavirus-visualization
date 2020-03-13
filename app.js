@@ -21,6 +21,14 @@ function molecule(mol) {
   return mol;
 };
 
+const threeToOne = {
+  'CYS': 'C', 'ASP': 'D', 'SER': 'S', 'GLN': 'Q', 'LYS': 'K',
+  'ILE': 'I', 'PRO': 'P', 'THR': 'T', 'PHE': 'F', 'ASN': 'N', 
+  'GLY': 'G', 'HIS': 'H', 'LEU': 'L', 'ARG': 'R', 'TRP': 'W', 
+  'ALA': 'A', 'VAL': 'V', 'GLU': 'E', 'TYR': 'Y', 'MET': 'M',
+  'NAG': '*', 'FUL': '*'
+};
+
 function Visualization(props) {
   if(!props.data) return <div />;
   const { fubar, fasta, pdb, indexMap } = props.data,
@@ -78,17 +86,83 @@ function Visualization(props) {
     };
   sortFASTAAndNewick(remaining_data, tree);
   indexMap.forEach(im => {
-    const { current_index, original_index } = im,
+    const { full_index, original_index } = im,
       y = fubar.MLE.content['0'][+original_index][2];
-    line_data[+current_index] = y;
+    line_data[+full_index] = y;
   });
   useEffect(() => {
     const structure_div = document.getElementById('structure'),
       viewer = pv.Viewer(structure_div, structure_options),
       structure = pv.io.pdb(pdb, structure_options),
-      chain = structure.select(),
+      chain = structure.select({chain: 'A'}),
       geom = viewer.cartoon('protein', chain);
     viewer.autoZoom();
+    const pdb_map = {};
+    chain._chains[0]._residues.forEach((res, i) => {
+      pdb_map[res.num()] = i;
+    });
+
+/*
+    const background_color = .95,
+      sites_to_highlight = props.hyphy.siteAnnotations
+        .filter(site=>site.pdb)
+        .map(site=>site.pdb);
+    geom.colorBy(new pv.color.ColorOp(function(atom, out, index) {
+      var r_color = background_color,
+        g_color = background_color,
+        b_color = background_color;
+        var resnum = atom.residue().num(),
+          pdb_index = resnum - 33;
+        pdb_index +=  - (resnum > 124 ? 198 - 124 - 1: 0);
+        pdb_index +=  - (resnum > 299 ? 329 - 299 - 1: 0);
+      if(sites_to_highlight.indexOf(pdb_index) > -1) {
+        r_color = rgb_legend.R;
+        g_color = rgb_legend.G;
+        b_color = rgb_legend.B;
+      }
+      out[index] = r_color;
+      out[index + 1] = g_color;
+      out[index + 2] = b_color;
+      out[index + 3] = 1;
+    }));
+*/
+
+    function setColorForAtom(go, atom, color){
+      var view = go.structure().createEmptyView();
+      view.addAtom(atom);
+      go.colorBy(pv.color.uniform(color), view);
+    }
+    var prevPicked = null;
+    structure_div.addEventListener('mousemove', function(event){
+      var rect = viewer.boundingClientRect();
+      var picked = viewer.pick({ 
+          x : event.clientX - rect.left,
+          y : event.clientY - rect.top
+      });
+      if (prevPicked !== null && picked !== null &&
+        picked.target() === prevPicked.atom){
+        return;
+      }
+      if (prevPicked !== null){
+        setColorForAtom(prevPicked.node, prevPicked.atom, prevPicked.color);
+      }
+      if (picked !== null){
+        var atom = picked.target();
+        var residue = atom.residue();
+        var resnum = residue.num();
+        console.log(resnum, pdb_map[resnum], threeToOne[residue._name]);
+        var color = [0,0,0,0];
+        picked.node().getColorForAtom(atom, color);
+        prevPicked = { atom : atom, color : color, node : picked.node() };
+        setColorForAtom(picked.node(), atom, 'red');
+      }
+      else{
+        prevPicked = null;
+      }
+      viewer.requestRedraw();
+    });
+
+
     document
       .getElementById('hyphy-chart-div')
       .addEventListener("alignmentjs_wheel_event", function(e) {
