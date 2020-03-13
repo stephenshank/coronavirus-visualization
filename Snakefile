@@ -9,22 +9,41 @@ def indicial_mapping(original, added, indicial_map):
     SeqIO.parse(original, 'fasta'),
     key=lambda record: record.name
   ))
-  added_hash = SeqIO.to_dict(SeqIO.parse(added, 'fasta'))
+  original_hash = { record.name: True for record in original_records }
+  full_hash = SeqIO.to_dict(SeqIO.parse(added, 'fasta'))
   original_np = np.array([
     list(str(record.seq)) for record in original_records
   ], dtype='<U1')
-  added_np = np.array([
-    list(str(added_hash[record.name].seq)) for record in original_records
+  full_np = np.array([
+    list(str(full_hash[record.name].seq)) for record in original_records
   ], dtype='<U1')
+  additional_names = [
+    record.name
+    for name, record in full_hash.items()
+    if not name in original_hash
+  ]
+  additional_headers = [name+'_index' for name in additional_names]
 
   csv_file = open(indicial_map, 'w')
   writer = csv.writer(csv_file)
-  writer.writerow(['current_index', 'original_index'])
+  writer.writerow(['full_index', 'original_index'] + additional_headers)
 
   original_index = 0
-  for added_index in range(added_np.shape[1]):
-    if np.all(original_np[:, original_index] == added_np[:, added_index]):
-      writer.writerow([added_index, original_index])
+  additional_indices = [0 for _ in additional_headers]
+  for full_index in range(full_np.shape[1]):
+    current_additional_indices = []
+    for i, additional_index in enumerate(additional_indices):
+      name = additional_names[i]
+      record = full_hash[name]
+      isnt_gap = record.seq[full_index] != '-'
+      print(isnt_gap, additional_indices)
+      if isnt_gap:
+        current_additional_indices.append(additional_index)
+        additional_indices[i] += 1
+      else:
+        current_additional_indices.append('-')
+    if np.all(original_np[:, original_index] == full_np[:, full_index]):
+      writer.writerow([full_index, original_index] + current_additional_indices)
       original_index += 1
   csv_file.close()
 
@@ -68,7 +87,7 @@ rule amino_acid_fasta:
 rule full_alignment:
   input:
     msa=rules.amino_acid_fasta.output[0],
-    pdb='public/input/6vxx_entry.fasta'
+    pdb='public/input/pv-seq.fasta'
   output:
     'public/output/{dataset}-full.fasta'
   shell:
