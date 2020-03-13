@@ -23,7 +23,7 @@ function molecule(mol) {
 
 function Visualization(props) {
   if(!props.data) return <div />;
-  const { fubar, fasta, pdb } = props.data,
+  const { fubar, fasta, pdb, indexMap } = props.data,
     sequence_data = fastaParser(fasta),
     number_of_sequences = sequence_data.length,
     { number_of_sites } = sequence_data,
@@ -51,12 +51,12 @@ function Visualization(props) {
       .domain([1, number_of_sites])
       .range([site_size / 2, full_pixel_width - site_size / 2]),
     tickValues = d3.range(1, number_of_sites, 2),
-    line_data = fubar.MLE.content['0'].map(d => d[2]),
+    line_data = Array(number_of_sites).fill(0),
     line_scale = d3.scaleLinear()
-      .domain(d3.extent(line_data))
+      .domain(d3.extent(fubar.MLE.content['0'].map(d=>d[2])))
       .range([structure_height - axis_height, 0]),
     line = d3.line()
-      .x((d, i) => i * (site_size-.5))
+      .x((d, i) => (i+.5) * site_size+.5)
       .y(d => line_scale(d)),
     scroll_broadcaster = new ScrollBroadcaster({
       width: full_pixel_width,
@@ -77,6 +77,11 @@ function Visualization(props) {
       background: '#FFF'
     };
   sortFASTAAndNewick(remaining_data, tree);
+  indexMap.forEach(im => {
+    const { current_index, original_index } = im,
+      y = fubar.MLE.content['0'][+original_index][2];
+    line_data[+current_index] = y;
+  });
   useEffect(() => {
     const structure_div = document.getElementById('structure'),
       viewer = pv.Viewer(structure_div, structure_options),
@@ -90,7 +95,41 @@ function Visualization(props) {
         $('#hyphy-chart-div').scrollLeft(e.detail.x_pixel);
       });
   }, []);
-  return (
+  return (<div
+      style={{width: tree_width + alignment_width}}
+    >
+    <div style={{position: 'relative'}}>
+      <div
+        style={{
+          position: 'absolute',
+          right: 10,
+          top: 10
+        }}
+      >
+        <svg
+          width={100}
+          height={50}
+        >
+          <line
+            x1="0"
+            x2="20"
+            y1="25"
+            y2="25"
+            stroke="red"
+            strokeWidth={2}
+          />
+          <text
+            x="25"
+            y="25"
+            alignmentBaseline="middle"
+            textAnchor="start"
+          >
+            {'\u03B2 - \u03B1'}
+          </text>
+        </svg>
+      </div>
+    </div>
+
     <div
       style={{
         display: "grid",
@@ -103,7 +142,10 @@ function Visualization(props) {
       <div
         id='hyphy-chart-div'
         style={{overflowX: "scroll"}}
-        onWheel={e => this.handleHyPhyWheel(e)}
+        onWheel={e => {
+          e.preventDefault();
+          scroll_broadcaster.handleWheel(e, 'main');
+        }}
       >
         <svg width={full_pixel_width} height={structure_height}>
           <path
@@ -170,7 +212,7 @@ function Visualization(props) {
         amino_acid
       />
     </div>
-  );
+  </div>);
 }
 
 function App() {
@@ -185,7 +227,8 @@ function App() {
       setData({
         fubar: data[0],
         fasta: data[1],
-        pdb: data[2]
+        pdb: data[2],
+        indexMap: data[3]
       });
     });
   }, []);
