@@ -29,6 +29,14 @@ const threeToOne = {
   'NAG': '*', 'FUL': '*'
 };
 
+function hex2rgb(hex) {
+  const split = hex.split(','),
+    r = +split[0].split('(')[1] / 256,
+    g = +split[1] / 256,
+    b = +split[2].split(')')[0] / 256;
+    return [r, g, b];
+}
+
 function Visualization(props) {
   if(!props.data) return <div />;
   const { fubar, fasta, pdb, indexMap } = props.data,
@@ -60,8 +68,12 @@ function Visualization(props) {
       .range([site_size / 2, full_pixel_width - site_size / 2]),
     tickValues = d3.range(1, number_of_sites, 2),
     line_data = Array(number_of_sites).fill(0),
+    line_extent = d3.extent(fubar.MLE.content['0'].map(d=>d[2])),
+    colorbar_scale = d3.scaleLinear()
+      .domain([line_extent[0], 0, line_extent[1]])
+      .range(['blue', '#EEEEEE', 'red']),
     line_scale = d3.scaleLinear()
-      .domain(d3.extent(fubar.MLE.content['0'].map(d=>d[2])))
+      .domain(line_extent)
       .range([structure_height - axis_height, 0]),
     line = d3.line()
       .x((d, i) => (i+.5) * site_size+.5)
@@ -83,7 +95,9 @@ function Visualization(props) {
       antialias: true,
       quality : 'medium',
       background: '#FFF'
-    };
+    },
+    pv2hyphy = indexMap.filter(index => index.pvseq_index != '-')
+      .map(index => +index.original_index);
   sortFASTAAndNewick(remaining_data, tree);
   indexMap.forEach(im => {
     const { full_index, original_index } = im,
@@ -99,34 +113,28 @@ function Visualization(props) {
     viewer.autoZoom();
     const pdb_map = {};
     chain._chains[0]._residues.forEach((res, i) => {
-      pdb_map[res.num()] = i;
+      if(!(threeToOne[res._residue._name] == '*')) {
+        pdb_map[res.num()] = i;
+      }
     });
 
-/*
-    const background_color = .95,
-      sites_to_highlight = props.hyphy.siteAnnotations
-        .filter(site=>site.pdb)
-        .map(site=>site.pdb);
     geom.colorBy(new pv.color.ColorOp(function(atom, out, index) {
-      var r_color = background_color,
-        g_color = background_color,
-        b_color = background_color;
-        var resnum = atom.residue().num(),
-          pdb_index = resnum - 33;
-        pdb_index +=  - (resnum > 124 ? 198 - 124 - 1: 0);
-        pdb_index +=  - (resnum > 299 ? 329 - 299 - 1: 0);
-      if(sites_to_highlight.indexOf(pdb_index) > -1) {
-        r_color = rgb_legend.R;
-        g_color = rgb_legend.G;
-        b_color = rgb_legend.B;
+      try {
+        const resnum = atom.residue().num(),
+          hyphy_index = pv2hyphy[pdb_map[resnum]],
+          hyphy_value = fubar.MLE.content['0'][hyphy_index][2],
+          color = colorbar_scale(hyphy_value),
+          [r_color, g_color, b_color] = hex2rgb(color);
+        out[index] = r_color;
+        out[index + 1] = g_color;
+        out[index + 2] = b_color;
+        out[index + 3] = 1;
+      } catch {
+        console.log(
+          threeToOne[atom.residue()._residue._name]
+        )
       }
-      out[index] = r_color;
-      out[index + 1] = g_color;
-      out[index + 2] = b_color;
-      out[index + 3] = 1;
     }));
-*/
-
     function setColorForAtom(go, atom, color){
       var view = go.structure().createEmptyView();
       view.addAtom(atom);
