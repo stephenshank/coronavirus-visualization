@@ -237,7 +237,7 @@ function Visualization(props) {
         <div>
           <svg width={80} height={structure_height}>
             <defs>
-              <linearGradient id='gradient' x1="0%" x2="0%" y1="0%" y2="100%">
+              <linearGradient id='gradient' x1="0%" x2="0%" y1="100%" y2="0%">
                 {colorbar_data_scale.domain().map((value, index) => {
                   return (<stop
                     key={index}
