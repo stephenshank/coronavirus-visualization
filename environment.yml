@@ -1,0 +1,13 @@
+name: coronavirus
+channels:
+  - stephenshank
+  - conda-forge
+  - bioconda
+  - defaults
+  - davebx
+  - r
+dependencies:
+  - hyphy=2.5.5
+  - snakemake=5.3.0
+  - biopython=1.76
+  - numpy=1.18.1
