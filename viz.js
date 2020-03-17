@@ -85,6 +85,7 @@ function Visualization(props) {
       x_pad: width - tree_width,
       y_pad: height - structure_height,
       bidirectional: [
+        "tree",
         "alignmentjs-alignment",
         "pdb-alignment",
         "hyphy-chart-div"
@@ -177,6 +178,12 @@ function Visualization(props) {
       .addEventListener("alignmentjs_wheel_event", function(e) {
         $('#hyphy-chart-div').scrollLeft(e.detail.x_pixel);
       });
+    document
+      .getElementById('tree')
+      .addEventListener("alignmentjs_wheel_event", function(e) {
+        $('#tree').scrollTop(e.detail.y_pixel);
+      });
+
   }, []);
   return (<div
       style={{width: tree_width + alignment_width}}
@@ -312,13 +319,19 @@ function Visualization(props) {
           amino_acid
         />
       </div>
-      <div>
-        <svg width={tree_width} height={alignment_height}>
+      <div
+        id="tree"
+        style={{
+        width: tree_width,
+        height: alignment_height,
+        overflowY: "scroll"
+      }}>
+        <svg width={tree_width} height={full_pixel_height}>
           <g transform={`translate(${padding}, ${padding})`}>
             <Phylotree
               tree={tree}
               width={tree_width - 2*padding}
-              height={alignment_height - 2*padding}
+              height={full_pixel_height - 2*padding}
               maxLabelWidth={100}
               accessor={node => {
                 return null;
