@@ -263,9 +263,20 @@ function Visualization(props) {
         }}
       >
         <svg width={full_pixel_width} height={structure_height}>
+          {colorbar_data_scale.ticks().map(tick => {
+            return (<line
+              key={tick}
+              x1={0}
+              x2={full_pixel_width}
+              y1={colorbar_data_scale(tick)}
+              y2={colorbar_data_scale(tick)}
+              stroke={tick == 0 ? 'black' : 'lightgrey'}
+              strokeWidth={1}
+            />);
+          })}
           <path
             stroke='red'
-            strokeWidth={2}
+            strokeWidth={3}
             d={line(line_data)}
             fill='none'
           />
@@ -297,6 +308,7 @@ function Visualization(props) {
           scroll_broadcaster={scroll_broadcaster}
           molecule={molecule}
           id={'pdb'}
+          disableVerticalScrolling
           amino_acid
         />
       </div>
