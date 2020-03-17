@@ -8,7 +8,7 @@ import BaseAlignment from "alignment.js/components/BaseAlignment";
 import { BaseSequenceAxis } from "alignment.js/components/SequenceAxis";
 import Placeholder from "alignment.js/components/Placeholder";
 import $ from "jquery";
-import { AxisBottom } from "d3-react-axis";
+import { AxisLeft, AxisBottom } from "d3-react-axis";
 import fastaParser from "alignment.js/helpers/fasta";
 import sortFASTAAndNewick from "alignment.js/helpers/jointSort.js";
 import StopWobbling from "alignment.js/prevent_default_patch";
@@ -72,12 +72,17 @@ function Visualization(props) {
     colorbar_scale = d3.scaleLinear()
       .domain([line_extent[0], 0, line_extent[1]])
       .range(['blue', '#EEEEEE', 'red']),
+    colorbar_data_scale = d3.scaleLinear()
+      .domain([line_extent[0], 0, line_extent[1]])
+      .range([structure_height - axis_height, structure_height/2, 0]),
     line_scale = d3.scaleLinear()
       .domain(line_extent)
       .range([structure_height - axis_height, 0]),
     line = d3.line()
       .x((d, i) => (i+.5) * site_size+.5)
       .y(d => line_scale(d)),
+    [min_domain, max_domain] = d3.extent(colorbar_data_scale.domain()),
+    range_domain = max_domain - min_domain,
     scroll_broadcaster = new ScrollBroadcaster({
       width: full_pixel_width,
       height: full_pixel_height,
@@ -90,7 +95,7 @@ function Visualization(props) {
       ]
     }),
     structure_options = {
-      width: tree_width,
+      width: tree_width - 60,
       height: structure_height,
       antialias: true,
       quality : 'medium',
@@ -219,7 +224,39 @@ function Visualization(props) {
         gridTemplateColumns: `${tree_width}px ${alignment_width}px`
       }}
     >
-      <div id='structure'>
+      <div style={{
+        display: "grid",
+        gridTemplateRows: `${structure_height}px`,
+        gridTemplateColumns: `${tree_width-60}px 60px`
+      }}>
+        <div id='structure'>
+        </div>
+        <div>
+          <svg width={80} height={structure_height}>
+            <defs>
+              <linearGradient id='gradient' x1="0%" x2="0%" y1="0%" y2="100%">
+                {colorbar_data_scale.domain().map((value, index) => {
+                  return (<stop
+                    key={index}
+                    offset={100*(value-min_domain)/range_domain + "%"}
+                    stopColor={colorbar_scale(value)}
+                  />)
+                })}
+              </linearGradient>
+            </defs>
+            <AxisLeft
+              transform='translate(30, 0)'
+              scale={colorbar_data_scale}
+            />
+            <rect
+              fill={`url(#gradient)`}
+              x={30}
+              y={0}
+              width={30}
+              height={structure_height - axis_height}
+            />
+          </svg>
+        </div>
       </div>
       <div
         id='hyphy-chart-div'
