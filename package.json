@@ -29,10 +29,11 @@
     "jquery": "^3.4.1",
     "phylotree": "1.0.0-alpha.17",
     "react": "16.12.0",
-    "react-bootstrap": "1.0.0-beta.17",
+    "react-bootstrap": "^1.0.0-beta.17",
     "react-dom": "16.12.0",
     "react-phylotree": "^0.4.1",
-    "react-router-dom": "^5.1.2"
+    "react-router-dom": "^5.1.2",
+    "underscore": "^1.9.2"
   },
   "scripts": {
     "develop": "npx webpack-dev-server --open"

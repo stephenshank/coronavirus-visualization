@@ -1,10 +1,12 @@
-import React, { useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import fastaParser from "alignment.js/helpers/fasta";
 import ScrollBroadcaster from "alignment.js/helpers/ScrollBroadcaster";
 import { phylotree } from "phylotree";
 import { nucleotide_color } from "alignment.js/helpers/colors";
 import BaseAlignment from "alignment.js/components/BaseAlignment";
 import { BaseSequenceAxis } from "alignment.js/components/SequenceAxis";
+import _ from "underscore";
+import Dropdown from "react-bootstrap/Dropdown";
 import Placeholder from "alignment.js/components/Placeholder";
 import $ from "jquery";
 import { AxisLeft, AxisBottom } from "d3-react-axis";
@@ -33,9 +35,26 @@ function hex2rgb(hex) {
     return [r, g, b];
 }
 
+const colors = [
+    'red',
+    'blue',
+    'orange',
+    'purple',
+    'brown',
+    'black'
+  ],
+  labels = [
+    '\u03B1',
+    '\u03B2',
+    '\u03B2 - \u03B1',
+    'P[\u03B1 > \u03B2]',
+    'P[\u03B1 < \u03B2]',
+    'EBF[\u03B1 < \u03B2]'
+  ];
 function Visualization(props) {
   if(!props.data) return <div />;
   const { fubar, fasta, pdb, indexMap } = props.data,
+    [ statIndex, setStatIndex ] = useState(2),
     sequence_data = fastaParser(fasta),
     number_of_sequences = sequence_data.length,
     { number_of_sites } = sequence_data,
@@ -63,17 +82,21 @@ function Visualization(props) {
       .domain([1, number_of_sites])
       .range([site_size / 2, full_pixel_width - site_size / 2]),
     tickValues = d3.range(1, number_of_sites, 2),
-    line_data = Array(number_of_sites).fill(0),
-    line_extent = d3.extent(fubar.MLE.content['0'].map(d=>d[2])),
+    line_data = Array(6).fill().map(d=>Array(number_of_sites).fill(0)),
+    line_extent = d3.extent(
+      _.flatten(fubar.MLE.content['0'].map(d=>d3.extent(d)))
+    ),
+    bound = d3.max(line_extent.map(d=>Math.abs(d))),
+    colorbar_domain = [-bound, 0, bound],
     colorbar_scale = d3.scaleLinear()
-      .domain([line_extent[0], 0, line_extent[1]])
+      .domain(colorbar_domain)
       .range(['blue', '#EEEEEE', 'red']),
     colorbar_data_scale = d3.scaleLinear()
-      .domain([line_extent[0], 0, line_extent[1]])
+      .domain(colorbar_domain)
       .range([structure_height - axis_height, structure_height/2, 0]),
     line_scale = d3.scaleLinear()
-      .domain(line_extent)
-      .range([structure_height - axis_height, 0]),
+      .domain(colorbar_domain)
+      .range([structure_height - axis_height, structure_height/2, 0]),
     line = d3.line()
       .x((d, i) => (i+.5) * site_size+.5)
       .y(d => line_scale(d)),
@@ -102,13 +125,16 @@ function Visualization(props) {
       .map(index => +index.original_index);
   sortFASTAAndNewick(remaining_data, tree);
   indexMap.forEach(im => {
-    const { full_index, original_index } = im,
-      y = fubar.MLE.content['0'][+original_index][2];
-    line_data[+full_index] = y;
+    [0, 1, 2, 3, 4, 5].forEach(i => {
+      const { full_index, original_index } = im,
+        y = fubar.MLE.content['0'][+original_index][i];
+      line_data[i][+full_index] = y;
+    })
   });
   useEffect(() => {
-    const structure_div = document.getElementById('structure'),
-      viewer = pv.Viewer(structure_div, structure_options),
+    const structure_div = document.getElementById('structure');
+    structure_div.innerHTML = '';
+    const viewer = pv.Viewer(structure_div, structure_options),
       structure = pv.io.pdb(pdb, structure_options),
       chain = structure.select({chain: 'A'}),
       geom = viewer.cartoon('protein', chain);
@@ -124,7 +150,7 @@ function Visualization(props) {
       try {
         const resnum = atom.residue().num(),
           hyphy_index = pv2hyphy[pdb_map[resnum]],
-          hyphy_value = fubar.MLE.content['0'][hyphy_index][2],
+          hyphy_value = fubar.MLE.content['0'][hyphy_index][statIndex],
           color = colorbar_scale(hyphy_value),
           [r_color, g_color, b_color] = hex2rgb(color);
         out[index] = r_color;
@@ -171,8 +197,10 @@ function Visualization(props) {
       }
       viewer.requestRedraw();
     });
+  }, [statIndex]);
 
 
+  useEffect(() => {
     document
       .getElementById('hyphy-chart-div')
       .addEventListener("alignmentjs_wheel_event", function(e) {
@@ -185,172 +213,197 @@ function Visualization(props) {
       });
 
   }, []);
-  return (<div
+  return (<div>
+    <div
       style={{width: tree_width + alignment_width}}
     >
-    <div style={{position: 'relative'}}>
-      <div
-        style={{
-          position: 'absolute',
-          right: 10,
-          top: 10
-        }}
-      >
-        <svg
-          width={100}
-          height={50}
-        >
-          <line
-            x1="0"
-            x2="20"
-            y1="25"
-            y2="25"
-            stroke="red"
-            strokeWidth={2}
-          />
-          <text
-            x="25"
-            y="25"
-            alignmentBaseline="middle"
-            textAnchor="start"
-          >
-            {'\u03B2 - \u03B1'}
-          </text>
-        </svg>
-      </div>
-    </div>
+      <Dropdown onSelect={key => setStatIndex(key)}>
+        <Dropdown.Toggle variant="secondary" id="dropdown-basic">
+          {fubar.MLE.headers[statIndex][1]}
+        </Dropdown.Toggle>
 
-    <div
-      style={{
-        display: "grid",
-        gridTemplateRows: `${structure_height}px ${site_size}px ${alignment_height}px`,
-        gridTemplateColumns: `${tree_width}px ${alignment_width}px`
-      }}
-    >
-      <div style={{
-        display: "grid",
-        gridTemplateRows: `${structure_height}px`,
-        gridTemplateColumns: `${tree_width-60}px 60px`
-      }}>
-        <div id='structure'>
-        </div>
-        <div>
-          <svg width={80} height={structure_height}>
-            <defs>
-              <linearGradient id='gradient' x1="0%" x2="0%" y1="100%" y2="0%">
-                {colorbar_data_scale.domain().map((value, index) => {
-                  return (<stop
-                    key={index}
-                    offset={100*(value-min_domain)/range_domain + "%"}
-                    stopColor={colorbar_scale(value)}
-                  />)
-                })}
-              </linearGradient>
-            </defs>
-            <AxisLeft
-              transform='translate(30, 0)'
-              scale={colorbar_data_scale}
-            />
-            <rect
-              fill={`url(#gradient)`}
-              x={30}
-              y={0}
-              width={30}
-              height={structure_height - axis_height}
-            />
+        <Dropdown.Menu>
+          <Dropdown.Header>
+            Evolutionary statistic
+          </Dropdown.Header>
+          {fubar.MLE.headers.map((header, index) => {
+            return (<Dropdown.Item key={index} eventKey={index}>
+              {header[1]}
+            </Dropdown.Item>);
+          })}
+        </Dropdown.Menu>
+      </Dropdown>
+      <div style={{position: 'relative'}}>
+        <div
+          style={{
+            position: 'absolute',
+            right: 10,
+            top: 10
+          }}
+        >
+          <svg
+            width={100}
+            height={200}
+          >
+            {d3.range(6).map(i => {
+              return (<g key={i} transform={`translate(0, ${i*30})`}>
+                <line
+                  x1="0"
+                  x2="20"
+                  y1="25"
+                  y2="25"
+                  stroke={colors[i]}
+                  strokeWidth={3}
+                />
+                <text
+                  x="25"
+                  y="25"
+                  alignmentBaseline="middle"
+                  textAnchor="start"
+                >
+                  {labels[i]}
+                </text>
+              </g>);
+            })}
           </svg>
         </div>
       </div>
+
       <div
-        id='hyphy-chart-div'
-        style={{overflowX: "scroll"}}
-        onWheel={e => {
-          e.preventDefault();
-          scroll_broadcaster.handleWheel(e, 'main');
+        style={{
+          display: "grid",
+          gridTemplateRows: `${structure_height}px ${site_size}px ${alignment_height}px`,
+          gridTemplateColumns: `${tree_width}px ${alignment_width}px`
         }}
       >
-        <svg width={full_pixel_width} height={structure_height}>
-          {colorbar_data_scale.ticks().map(tick => {
-            return (<line
-              key={tick}
-              x1={0}
-              x2={full_pixel_width}
-              y1={colorbar_data_scale(tick)}
-              y2={colorbar_data_scale(tick)}
-              stroke={tick == 0 ? 'black' : 'lightgrey'}
-              strokeWidth={1}
-            />);
-          })}
-          <path
-            stroke='red'
-            strokeWidth={3}
-            d={line(line_data)}
-            fill='none'
-          />
-          <AxisBottom 
-            scale={axis_scale}
-            tickValues={tickValues}
-            transform={`translate(0, ${structure_height - axis_height})`}
-          />
-        </svg>
-      </div>
-      <div>
-        <svg width={tree_width} height={site_size}>
-          <BaseSequenceAxis
-            translateY={-4}
+        <div style={{
+          display: "grid",
+          gridTemplateRows: `${structure_height}px`,
+          gridTemplateColumns: `${tree_width-60}px 60px`
+        }}>
+          <div id='structure'>
+          </div>
+          <div>
+            <svg width={80} height={structure_height}>
+              <defs>
+                <linearGradient id='gradient' x1="0%" x2="0%" y1="100%" y2="0%">
+                  {colorbar_data_scale.domain().map((value, index) => {
+                    return (<stop
+                      key={index}
+                      offset={100*(value-min_domain)/range_domain + "%"}
+                      stopColor={colorbar_scale(value)}
+                    />)
+                  })}
+                </linearGradient>
+              </defs>
+              <AxisLeft
+                transform='translate(30, 0)'
+                scale={colorbar_data_scale}
+              />
+              <rect
+                fill={`url(#gradient)`}
+                x={30}
+                y={0}
+                width={30}
+                height={structure_height - axis_height}
+              />
+            </svg>
+          </div>
+        </div>
+        <div
+          id='hyphy-chart-div'
+          style={{overflowX: "scroll"}}
+          onWheel={e => {
+            e.preventDefault();
+            scroll_broadcaster.handleWheel(e, 'main');
+          }}
+        >
+          <svg width={full_pixel_width} height={structure_height}>
+            {colorbar_data_scale.ticks().map(tick => {
+              return (<line
+                key={tick}
+                x1={0}
+                x2={full_pixel_width}
+                y1={colorbar_data_scale(tick)}
+                y2={colorbar_data_scale(tick)}
+                stroke={tick == 0 ? 'black' : 'lightgrey'}
+                strokeWidth={1}
+              />);
+            })}
+            {d3.range(6).map(i => {
+              return (<path
+                key={i}
+                stroke={colors[i]}
+                strokeWidth={3}
+                d={line(line_data[i])}
+                fill='none'
+              />);
+            })}
+            <AxisBottom 
+              scale={axis_scale}
+              tickValues={tickValues}
+              transform={`translate(0, ${structure_height - axis_height})`}
+            />
+          </svg>
+        </div>
+        <div>
+          <svg width={tree_width} height={site_size}>
+            <BaseSequenceAxis
+              translateY={-4}
+              sequence_data={pdb_sequence}
+              label_padding={5}
+              site_size={site_size}
+              width={tree_width}
+            />
+          </svg>
+        </div>
+        <div>
+          <BaseAlignment
             sequence_data={pdb_sequence}
-            label_padding={5}
+            width={alignment_width}
+            height={site_size}
             site_size={site_size}
-            width={tree_width}
+            site_color={nucleotide_color}
+            scroll_broadcaster={scroll_broadcaster}
+            molecule={molecule}
+            id={'pdb'}
+            disableVerticalScrolling
+            amino_acid
           />
-        </svg>
-      </div>
-      <div>
+        </div>
+        <div
+          id="tree"
+          style={{
+          width: tree_width,
+          height: alignment_height,
+          overflowY: "scroll"
+        }}>
+          <svg width={tree_width} height={full_pixel_height}>
+            <g transform={`translate(${padding}, ${padding})`}>
+              <Phylotree
+                tree={tree}
+                width={tree_width - 2*padding}
+                height={full_pixel_height - 2*padding}
+                maxLabelWidth={100}
+                accessor={node => {
+                  return null;
+                }}
+                alignTips="right"
+              />
+            </g>
+          </svg>
+        </div>
         <BaseAlignment
-          sequence_data={pdb_sequence}
+          sequence_data={remaining_data}
           width={alignment_width}
-          height={site_size}
+          height={alignment_height}
           site_size={site_size}
           site_color={nucleotide_color}
           scroll_broadcaster={scroll_broadcaster}
           molecule={molecule}
-          id={'pdb'}
-          disableVerticalScrolling
           amino_acid
         />
       </div>
-      <div
-        id="tree"
-        style={{
-        width: tree_width,
-        height: alignment_height,
-        overflowY: "scroll"
-      }}>
-        <svg width={tree_width} height={full_pixel_height}>
-          <g transform={`translate(${padding}, ${padding})`}>
-            <Phylotree
-              tree={tree}
-              width={tree_width - 2*padding}
-              height={full_pixel_height - 2*padding}
-              maxLabelWidth={100}
-              accessor={node => {
-                return null;
-              }}
-              alignTips="right"
-            />
-          </g>
-        </svg>
-      </div>
-      <BaseAlignment
-        sequence_data={remaining_data}
-        width={alignment_width}
-        height={alignment_height}
-        site_size={site_size}
-        site_color={nucleotide_color}
-        scroll_broadcaster={scroll_broadcaster}
-        molecule={molecule}
-        amino_acid
-      />
     </div>
   </div>);
 }
