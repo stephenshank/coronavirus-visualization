@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import fastaParser from "alignment.js/helpers/fasta";
 import ScrollBroadcaster from "alignment.js/helpers/ScrollBroadcaster";
 import { phylotree } from "phylotree";
@@ -70,6 +70,7 @@ function Visualization(props) {
     [ transientHeight1, setTransientHeight1 ] = useState(400),
     [ height2, setHeight2 ] = useState(400),
     [ transientHeight2, setTransientHeight2 ] = useState(400),
+    [ emphasizedSite, setEmphasizedSite ] = useState(null),
     sequence_data = fastaParser(fasta),
     number_of_sequences = sequence_data.length,
     { number_of_sites } = sequence_data,
@@ -117,7 +118,7 @@ function Visualization(props) {
       .y(d => line_scale(d)),
     [min_domain, max_domain] = d3.extent(colorbar_data_scale.domain()),
     range_domain = max_domain - min_domain,
-    scroll_broadcaster = new ScrollBroadcaster({
+    scroll_broadcaster = useRef(new ScrollBroadcaster({
       width: full_pixel_width,
       height: full_pixel_height,
       x_pad: width - tree_width,
@@ -128,7 +129,7 @@ function Visualization(props) {
         "pdb-alignment",
         "hyphy-chart-div"
       ]
-    }),
+    })),
     structure_options = {
       width: tree_width - 60,
       height: structure_height,
@@ -146,6 +147,22 @@ function Visualization(props) {
       line_data[i][+full_index] = y;
     })
   });
+
+  useEffect(() => {
+    scroll_broadcaster.current = new ScrollBroadcaster({
+      width: full_pixel_width,
+      height: full_pixel_height,
+      x_pad: width - tree_width,
+      y_pad: height - structure_height,
+      bidirectional: [
+        "tree",
+        "alignmentjs-alignment",
+        "pdb-alignment",
+        "hyphy-chart-div"
+      ]
+    })
+  }, [width1, width2, height1, height2]);
+
   useEffect(() => {
     const structure_div = document.getElementById('structure');
     structure_div.innerHTML = '';
@@ -205,7 +222,14 @@ function Visualization(props) {
         var color = [0,0,0,0];
         picked.node().getColorForAtom(atom, color);
         prevPicked = { atom : atom, color : color, node : picked.node() };
-        setColorForAtom(picked.node(), atom, 'red');
+        setColorForAtom(picked.node(), atom, 'yellow');
+        const full_index = pv2hyphy[pdb_map[resnum]],
+          x_frac = (full_index * site_size - width2/2) / full_pixel_width,
+          y_frac = scroll_broadcaster.current['main'].y_fraction;
+        setEmphasizedSite(full_index);
+        setTimeout(() => {
+          scroll_broadcaster.current.broadcast(x_frac, y_frac, 'main');
+        }, 50);
       }
       else{
         prevPicked = null;
@@ -414,7 +438,7 @@ function Visualization(props) {
           style={{overflowX: "scroll"}}
           onWheel={e => {
             e.preventDefault();
-            scroll_broadcaster.handleWheel(e, 'main');
+            scroll_broadcaster.current.handleWheel(e, 'main');
           }}
         >
           <svg width={full_pixel_width} height={structure_height}>
@@ -443,6 +467,14 @@ function Visualization(props) {
               tickValues={tickValues}
               transform={`translate(0, ${structure_height - axis_height})`}
             />
+            {emphasizedSite ? (<rect
+              x={site_size*emphasizedSite}
+              y={0}
+              width={site_size}
+              height={height1}
+              fill='yellow'
+              opacity='.5'
+            />) : null }
           </svg>
         </div>
         <div>
@@ -463,7 +495,7 @@ function Visualization(props) {
             height={site_size}
             site_size={site_size}
             site_color={nucleotide_color}
-            scroll_broadcaster={scroll_broadcaster}
+            scroll_broadcaster={scroll_broadcaster.current}
             molecule={molecule}
             id={'pdb'}
             disableVerticalScrolling
@@ -498,7 +530,7 @@ function Visualization(props) {
           height={alignment_height}
           site_size={site_size}
           site_color={nucleotide_color}
-          scroll_broadcaster={scroll_broadcaster}
+          scroll_broadcaster={scroll_broadcaster.current}
           molecule={molecule}
           amino_acid
         />
