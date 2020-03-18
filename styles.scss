@@ -1,3 +1,13 @@
 @import "~bootstrap";
 @import "~alignment.js/styles.scss";
 @import "~react-phylotree/styles/phylotree.css";
+
+.toolbar {
+  display: flex;
+  flex-direction: row;
+  margin-bottom: 10px;
+}
+
+.toolbar > span {
+  margin-left: 10px;
+}

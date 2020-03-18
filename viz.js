@@ -7,6 +7,11 @@ import BaseAlignment from "alignment.js/components/BaseAlignment";
 import { BaseSequenceAxis } from "alignment.js/components/SequenceAxis";
 import _ from "underscore";
 import Dropdown from "react-bootstrap/Dropdown";
+import Modal from "react-bootstrap/Modal";
+import Button from "react-bootstrap/Button";
+import Row from "react-bootstrap/Row";
+import Col from "react-bootstrap/Col";
+import Form from "react-bootstrap/Form";
 import Placeholder from "alignment.js/components/Placeholder";
 import $ from "jquery";
 import { AxisLeft, AxisBottom } from "d3-react-axis";
@@ -51,20 +56,30 @@ const colors = [
     'P[\u03B1 < \u03B2]',
     'EBF[\u03B1 < \u03B2]'
   ];
+
 function Visualization(props) {
   if(!props.data) return <div />;
   const { fubar, fasta, pdb, indexMap } = props.data,
     [ statIndex, setStatIndex ] = useState(2),
+    [ showModal, setShowModal] = useState(false),
+    [ width1, setWidth1 ] = useState(700),
+    [ transientWidth1, setTransientWidth1 ] = useState(700),
+    [ width2, setWidth2 ] = useState(700),
+    [ transientWidth2, setTransientWidth2 ] = useState(700),
+    [ height1, setHeight1 ] = useState(400),
+    [ transientHeight1, setTransientHeight1 ] = useState(400),
+    [ height2, setHeight2 ] = useState(400),
+    [ transientHeight2, setTransientHeight2 ] = useState(400),
     sequence_data = fastaParser(fasta),
     number_of_sequences = sequence_data.length,
     { number_of_sites } = sequence_data,
     pdb_sequence = [sequence_data[number_of_sequences - 1]],
     remaining_data = sequence_data.slice(0, number_of_sequences - 1),
     tree = new phylotree(fubar.input.trees['0']),
-    width = 2400,
-    tree_width = 1200,
-    height = 1000,
-    structure_height = 500,
+    width = width1 + width2,
+    tree_width = width1,
+    height = height1 + height2,
+    structure_height = height1,
     site_size = 20,
     axis_height = 20,
     padding = site_size / 2,
@@ -197,7 +212,7 @@ function Visualization(props) {
       }
       viewer.requestRedraw();
     });
-  }, [statIndex]);
+  }, [statIndex, width1, height1]);
 
 
   useEffect(() => {
@@ -211,28 +226,112 @@ function Visualization(props) {
       .addEventListener("alignmentjs_wheel_event", function(e) {
         $('#tree').scrollTop(e.detail.y_pixel);
       });
-
   }, []);
   return (<div>
-    <div
-      style={{width: tree_width + alignment_width}}
-    >
-      <Dropdown onSelect={key => setStatIndex(key)}>
-        <Dropdown.Toggle variant="secondary" id="dropdown-basic">
-          {fubar.MLE.headers[statIndex][1]}
-        </Dropdown.Toggle>
+    <div className="toolbar">
+      <span>
+        <Dropdown onSelect={key => setStatIndex(key)}>
+          <Dropdown.Toggle variant="secondary" id="dropdown-basic">
+            {fubar.MLE.headers[statIndex][1]}
+          </Dropdown.Toggle>
+          <Dropdown.Menu>
+            <Dropdown.Header>
+              Evolutionary statistic
+            </Dropdown.Header>
+            {fubar.MLE.headers.map((header, index) => {
+              return (<Dropdown.Item key={index} eventKey={index}>
+                {header[1]}
+              </Dropdown.Item>);
+            })}
+          </Dropdown.Menu>
+        </Dropdown>
+      </span>
+      <span>
+        <Button variant="secondary" onClick={() => {
+          setShowModal(true);
+          setTransientWidth1(width1);
+          setTransientWidth2(width2);
+          setTransientHeight1(height1);
+          setTransientHeight2(height2);
+        }}>
+          Options
+        </Button>
+      </span>
+    </div>
 
-        <Dropdown.Menu>
-          <Dropdown.Header>
-            Evolutionary statistic
-          </Dropdown.Header>
-          {fubar.MLE.headers.map((header, index) => {
-            return (<Dropdown.Item key={index} eventKey={index}>
-              {header[1]}
-            </Dropdown.Item>);
-          })}
-        </Dropdown.Menu>
-      </Dropdown>
+    <Modal show={showModal} size="lg">
+      <Modal.Header>
+        <Modal.Title>Figure dimensions</Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        <Form>
+          <Form.Group as={Row}>
+            <Form.Label column sm={4}>
+              Structure/tree width
+            </Form.Label>
+            <Col sm={8}>
+              <Form.Control
+                type="number"
+                placeholder="Structure/tree width"
+                value={transientWidth1}
+                onChange={e => setTransientWidth1(+e.target.value)}
+              />
+            </Col>
+            <Form.Label column sm={4}>
+              Alignment/plot width
+            </Form.Label>
+            <Col sm={8}>
+              <Form.Control
+                type="number"
+                placeholder="Alignment/plot width"
+                value={transientWidth2}
+                onChange={e => setTransientWidth2(+e.target.value)}
+              />
+            </Col>
+            <Form.Label column sm={4}>
+              Structure/plot height
+            </Form.Label>
+            <Col sm={8}>
+              <Form.Control
+                type="number"
+                placeholder="Structure/plot height"
+                value={transientHeight1}
+                onChange={e => setTransientHeight1(+e.target.value)}
+              />
+            </Col>
+            <Form.Label column sm={4}>
+              Tree/alignment height
+            </Form.Label>
+            <Col sm={8}>
+              <Form.Control
+                type="number"
+                placeholder="Tree/alignment height"
+                value={transientHeight2}
+                onChange={e => setTransientHeight2(+e.target.value)}
+              />
+            </Col>
+
+          </Form.Group>
+        </Form>
+      </Modal.Body>
+      <Modal.Footer>
+        <Button variant="secondary" onClick={()=>setShowModal(false)}>
+          Close
+        </Button>
+        <Button variant="primary" onClick={() => {
+          setShowModal(false);
+          setWidth1(transientWidth1);
+          setWidth2(transientWidth2);
+          setHeight1(transientHeight1);
+          setHeight2(transientHeight2);
+        }}>
+          Apply
+        </Button>
+      </Modal.Footer>
+    </Modal>
+    <div
+      style={{width: width}}
+    >
       <div style={{position: 'relative'}}>
         <div
           style={{
