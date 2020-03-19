@@ -58,6 +58,7 @@ const colors = [
   ];
 
 var mouseDown = 0;
+var structureListener;
 document.body.onmousedown = function() { 
     mouseDown = 1;
 }
@@ -176,6 +177,7 @@ function Visualization(props) {
   useEffect(() => {
     const structure_div = document.getElementById('structure');
     structure_div.innerHTML = '';
+    structure_div.removeEventListener('mousemove', structureListener);
     const viewer = pv.Viewer(structure_div, structure_options),
       structure = pv.io.pdb(pdb, structure_options),
       chain = structure.select({chain: 'A'}),
@@ -211,7 +213,7 @@ function Visualization(props) {
       go.colorBy(pv.color.uniform(color), view);
     }
     var prevPicked = null;
-    structure_div.addEventListener('mousemove', function(event){
+    structureListener =  function(event){
       if(mouseDown == 0) {
         var rect = viewer.boundingClientRect();
         var picked = viewer.pick({ 
@@ -250,7 +252,8 @@ function Visualization(props) {
         }
         viewer.requestRedraw();
       }
-    });
+    }
+    structure_div.addEventListener('mousemove', structureListener);
   }, [statIndex, width1, height1]);
 
 
@@ -269,7 +272,10 @@ function Visualization(props) {
   return (<div>
     <div className="toolbar">
       <span>
-        <Dropdown onSelect={key => setStatIndex(key)}>
+        <Dropdown onSelect={key => {
+          setStatIndex(key);
+          setEmphasizedSite(null);
+        }}>
           <Dropdown.Toggle variant="secondary" id="dropdown-basic">
             {fubar.MLE.headers[statIndex][1]}
           </Dropdown.Toggle>
