@@ -57,6 +57,14 @@ const colors = [
     'EBF[\u03B1 < \u03B2]'
   ];
 
+var mouseDown = 0;
+document.body.onmousedown = function() { 
+    mouseDown = 1;
+}
+document.body.onmouseup = function() {
+    mouseDown = 0;
+}
+
 function Visualization(props) {
   if(!props.data) return <div />;
   const { fubar, fasta, pdb, indexMap } = props.data,
@@ -137,8 +145,10 @@ function Visualization(props) {
       quality : 'medium',
       background: '#FFF'
     },
-    pv2hyphy = indexMap.filter(index => index.pvseq_index != '-')
-      .map(index => +index.original_index);
+    pv2hyphy = indexMap.filter(index => index.PDBStructure_index != '-')
+      .map(index => +index.original_index),
+    pv2full = indexMap.filter(index => index.PDBStructure_index != '-')
+      .map(index => +index.full_index);
   sortFASTAAndNewick(remaining_data, tree);
   indexMap.forEach(im => {
     [0, 1, 2, 3, 4, 5].forEach(i => {
@@ -202,39 +212,44 @@ function Visualization(props) {
     }
     var prevPicked = null;
     structure_div.addEventListener('mousemove', function(event){
-      var rect = viewer.boundingClientRect();
-      var picked = viewer.pick({ 
-          x : event.clientX - rect.left,
-          y : event.clientY - rect.top
-      });
-      if (prevPicked !== null && picked !== null &&
-        picked.target() === prevPicked.atom){
-        return;
-      }
-      if (prevPicked !== null){
-        setColorForAtom(prevPicked.node, prevPicked.atom, prevPicked.color);
-      }
-      if (picked !== null){
-        var atom = picked.target();
-        var residue = atom.residue();
-        var resnum = residue.num();
-        console.log(resnum, pdb_map[resnum], threeToOne[residue._name]);
-        var color = [0,0,0,0];
-        picked.node().getColorForAtom(atom, color);
-        prevPicked = { atom : atom, color : color, node : picked.node() };
-        setColorForAtom(picked.node(), atom, 'yellow');
-        const full_index = pv2hyphy[pdb_map[resnum]],
-          x_frac = (full_index * site_size - width2/2) / full_pixel_width,
-          y_frac = scroll_broadcaster.current['main'].y_fraction;
-        setEmphasizedSite(full_index);
-        setTimeout(() => {
+      if(mouseDown == 0) {
+        var rect = viewer.boundingClientRect();
+        var picked = viewer.pick({ 
+            x : event.clientX - rect.left,
+            y : event.clientY - rect.top
+        });
+        if (prevPicked !== null && picked !== null &&
+          picked.target() === prevPicked.atom){
+          return;
+        }
+        if (prevPicked !== null){
+          setColorForAtom(prevPicked.node, prevPicked.atom, prevPicked.color);
+        }
+        if (picked !== null){
+          var atom = picked.target();
+          var residue = atom.residue();
+          var resnum = residue.num();
+          console.log(
+            'PDB index:', pdb_map[resnum],
+            'Full index:', pv2full[pdb_map[resnum]],
+            'Residue:', threeToOne[residue._name]
+          );
+          var color = [0,0,0,0];
+          picked.node().getColorForAtom(atom, color);
+          prevPicked = { atom : atom, color : color, node : picked.node() };
+          setColorForAtom(picked.node(), atom, 'yellow');
+          const full_index = pv2full[pdb_map[resnum]],
+            x_frac = (full_index * site_size - width2/2) / full_pixel_width,
+            y_frac = scroll_broadcaster.current['main'].y_fraction;
+          setEmphasizedSite(full_index);
           scroll_broadcaster.current.broadcast(x_frac, y_frac, 'main');
-        }, 50);
+        }
+        else{
+          prevPicked = null;
+          setEmphasizedSite(null);
+        }
+        viewer.requestRedraw();
       }
-      else{
-        prevPicked = null;
-      }
-      viewer.requestRedraw();
     });
   }, [statIndex, width1, height1]);
 

@@ -15,7 +15,7 @@ function Fetcher(props) {
     Promise.all([
       d3.json(`output/${dataset}.fna.FUBAR.json`),
       d3.text(`output/${dataset}-full.fasta`),
-      d3.text('input/pdb6vxx.ent'),
+      d3.text(`input/${dataset}.pdb`),
       d3.csv(`output/${dataset}-map.csv`)
     ]).then(data => {
       setData({
