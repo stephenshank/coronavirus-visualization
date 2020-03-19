@@ -20,7 +20,7 @@
     "webpack-dev-server": "^3.10.1"
   },
   "dependencies": {
-    "alignment.js": "file:.yalc/alignment.js",
+    "alignment.js": "0.2.3",
     "axios": "^0.19.1",
     "bio-pv": "^1.8.1",
     "bootstrap": "^4.4.1",
