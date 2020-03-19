@@ -2,6 +2,8 @@ import csv
 
 import numpy as np
 from Bio import SeqIO
+from Bio.PDB import PDBParser
+from Bio.PDB.Polypeptide import three_to_one
 
 
 def indicial_mapping(original, added, indicial_map):
@@ -47,11 +49,26 @@ def indicial_mapping(original, added, indicial_map):
       original_index += 1
   csv_file.close()
 
+
 def translate(input_file, output_file):
   f = list(SeqIO.parse(input_file, 'fasta'))
   for record in f:
       record.seq = record.seq.translate(gap='-')
   SeqIO.write(f, output_file, 'fasta')
+
+
+def extract_pdb_fasta(input_pdb, output_fasta):
+  parser = PDBParser()
+  structure = parser.get_structure('struct', input_pdb)[0]
+  chain = structure['A']
+
+  sequence = ''.join([
+      three_to_one(pdb_residue.get_resname())
+      for pdb_residue in chain.get_residues()
+      if pdb_residue.get_resname() != 'NAG'
+  ])
+  with open(output_fasta, 'w') as f:
+    f.write('>PDBStructure\n' + sequence)
 
 rule fubar:
   input:
@@ -84,10 +101,18 @@ rule amino_acid_fasta:
   run:
     translate(input[0], output[0])
 
+rule pdb_fasta:
+  input:
+    'public/input/{dataset}.pdb'
+  output:
+    'public/output/{dataset}-structure.fasta'
+  run:
+    extract_pdb_fasta(input[0], output[0])
+
 rule full_alignment:
   input:
     msa=rules.amino_acid_fasta.output[0],
-    pdb='public/input/pv-seq.fasta'
+    pdb=rules.pdb_fasta.output[0]
   output:
     'public/output/{dataset}-full.fasta'
   shell:
