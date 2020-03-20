@@ -1,14 +1,16 @@
 {
-  "name": "haplotype-reconstruction",
+  "name": "coronavirus-visualization",
   "version": "0.0.1",
-  "main": "index.js",
-  "repository": "bioviz-js-template",
+  "main": "library.js",
+  "repository": "coronavirus-visualization",
   "author": "Stephen Shank <sshank314@gmail.com>",
   "license": "MIT",
   "devDependencies": {
+    "@babel/cli": "7",
     "@babel/core": "^7.7.7",
     "@babel/preset-react": "^7.7.4",
     "babel-loader": "^8.0.6",
+    "babel-plugin-convert-jsx-extension-to-js": "^0.0.1",
     "css-loader": "^3.4.1",
     "html-webpack-plugin": "^3.2.0",
     "sass": "^1.24.3",
@@ -20,6 +22,7 @@
     "webpack-dev-server": "^3.10.1"
   },
   "dependencies": {
+    "@babel/plugin-proposal-class-properties": "7",
     "alignment.js": "0.2.3",
     "axios": "^0.19.1",
     "bio-pv": "^1.8.1",
@@ -36,6 +39,8 @@
     "underscore": "^1.9.2"
   },
   "scripts": {
-    "develop": "npx webpack-dev-server --open"
+    "develop": "npx webpack-dev-server --open",
+    "library": "BABEL_ENV=library npx babel src --out-dir lib --copy-files && cp {package.json,yarn.lock,README.md} lib",
+    "yalc": "yarn library && cd lib && yalc push"
   }
 }

@@ -6,3 +6,4 @@ public/main.js
 .snakemake
 messages.log
 .yalc
+lib
