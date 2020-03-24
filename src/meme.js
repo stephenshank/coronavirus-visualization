@@ -28,20 +28,10 @@ function molecule(mol) {
 };
 
 const colors = [
-    'red',
-    'blue',
-    'orange',
-    'purple',
-    'brown',
-    'black'
+    'red'
   ],
   labels = [
     '\u03B1',
-    '\u03B2',
-    '\u03B2 - \u03B1',
-    'P[\u03B1 > \u03B2]',
-    'P[\u03B1 < \u03B2]',
-    'EBF[\u03B1 < \u03B2]'
   ];
 
 var mouseDown = 0;
@@ -55,8 +45,8 @@ document.body.onmouseup = function() {
 
 function Visualization(props) {
   if(!props.data) return <div />;
-  const { fubar, fasta, pdb, indexMap } = props.data,
-    [ statIndex, setStatIndex ] = useState(2),
+  const { meme, fasta, pdb, indexMap } = props.data,
+    [ statIndex, setStatIndex ] = useState(0),
     [ showModal, setShowModal] = useState(false),
     [ width1, setWidth1 ] = useState(700),
     [ transientWidth1, setTransientWidth1 ] = useState(700),
@@ -72,7 +62,7 @@ function Visualization(props) {
     { number_of_sites } = sequence_data,
     pdb_sequence = [sequence_data[number_of_sequences - 1]],
     remaining_data = sequence_data.slice(0, number_of_sequences - 1),
-    tree = new phylotree(fubar.input.trees['0']),
+    tree = new phylotree(meme.input.trees['0']),
     width = width1 + width2,
     tree_width = width1,
     height = height1 + height2,
@@ -94,21 +84,21 @@ function Visualization(props) {
       .domain([1, number_of_sites])
       .range([site_size / 2, full_pixel_width - site_size / 2]),
     tickValues = d3.range(1, number_of_sites, 2),
-    line_data = Array(6).fill().map(d=>Array(number_of_sites).fill(0)),
+    line_data = Array(1).fill().map(d=>Array(number_of_sites).fill(0)),
     line_extent = d3.extent(
-      _.flatten(fubar.MLE.content['0'].map(d=>d3.extent(d)))
+      _.flatten(meme.MLE.content['0'].map(d=>d3.extent(d)))
     ),
-    bound = d3.max(line_extent.map(d=>Math.abs(d))),
+    bound = 10,
     colorbar_domain = [-bound, 0, bound],
     colorbar_scale = d3.scaleLinear()
       .domain(colorbar_domain)
       .range(['blue', '#EEEEEE', 'red']),
     colorbar_data_scale = d3.scaleLinear()
       .domain(colorbar_domain)
-      .range([structure_height - axis_height, structure_height/2, 0]),
+      .range([structure_height - axis_height, structure_height/2, 10]),
     line_scale = d3.scaleLinear()
       .domain(colorbar_domain)
-      .range([structure_height - axis_height, structure_height/2, 0]),
+      .range([structure_height - axis_height, structure_height/2, 10]),
     line = d3.line()
       .x((d, i) => (i+.5) * site_size+.5)
       .y(d => line_scale(d)),
@@ -133,15 +123,16 @@ function Visualization(props) {
       quality : 'medium',
       background: '#FFF'
     },
+    statIndices = d3.range(1),
     pv2hyphy = indexMap.filter(index => index.PDBStructure_index != '-')
       .map(index => +index.original_index),
     pv2full = indexMap.filter(index => index.PDBStructure_index != '-')
       .map(index => +index.full_index);
   sortFASTAAndNewick(remaining_data, tree);
   indexMap.forEach(im => {
-    [0, 1, 2, 3, 4, 5].forEach(i => {
+    statIndices.forEach(i => {
       const { full_index, original_index } = im,
-        y = fubar.MLE.content['0'][+original_index][i];
+        y = meme.MLE.content['0'][+original_index][i];
       line_data[i][+full_index] = y;
     })
   });
@@ -181,7 +172,7 @@ function Visualization(props) {
       try {
         const resnum = atom.residue().num(),
           hyphy_index = pv2hyphy[pdb_map[resnum]],
-          hyphy_value = fubar.MLE.content['0'][hyphy_index][statIndex],
+          hyphy_value = meme.MLE.content['0'][hyphy_index][statIndex],
           color = colorbar_scale(hyphy_value),
           [r_color, g_color, b_color] = hex2rgb(color);
         out[index] = r_color;
@@ -264,16 +255,18 @@ function Visualization(props) {
           setEmphasizedSite(null);
         }}>
           <Dropdown.Toggle variant="secondary" id="dropdown-basic">
-            {fubar.MLE.headers[statIndex][1]}
+            {meme.MLE.headers[statIndex][1]}
           </Dropdown.Toggle>
           <Dropdown.Menu>
             <Dropdown.Header>
               Evolutionary statistic
             </Dropdown.Header>
-            {fubar.MLE.headers.map((header, index) => {
-              return (<Dropdown.Item key={index} eventKey={index}>
-                {header[1]}
-              </Dropdown.Item>);
+            {meme.MLE.headers.map((header, index) => {
+              return (<Dropdown.Item
+                key={index}
+                eventKey={index}
+                dangerouslySetInnerHTML={{ __html: header[1] }}
+              />);
             })}
           </Dropdown.Menu>
         </Dropdown>
@@ -376,7 +369,7 @@ function Visualization(props) {
             width={100}
             height={200}
           >
-            {d3.range(6).map(i => {
+            {statIndices.map(i => {
               return (<g key={i} transform={`translate(0, ${i*30})`}>
                 <line
                   x1="0"
@@ -461,7 +454,7 @@ function Visualization(props) {
                 strokeWidth={1}
               />);
             })}
-            {d3.range(6).map(i => {
+            {statIndices.map(i => {
               return (<path
                 key={i}
                 stroke={colors[i]}
@@ -547,18 +540,18 @@ function Visualization(props) {
   </div>);
 }
 
-function FubarFetcher(props) {
+function MEMEFetcher(props) {
   const [data, setData] = useState(null),
     { dataset } = props;
   useEffect(() => {
     Promise.all([
-      d3.json(`/output/${dataset}.fna.FUBAR.json`),
+      d3.json(`/output/${dataset}.fna.MEME.json`),
       d3.text(`/output/${dataset}-full.fasta`),
       d3.text(`/input/${dataset}.pdb`),
       d3.csv(`/output/${dataset}-map.csv`)
     ]).then(data => {
       setData({
-        fubar: data[0],
+        meme: data[0],
         fasta: data[1],
         pdb: data[2],
         indexMap: data[3]
@@ -566,15 +559,15 @@ function FubarFetcher(props) {
     });
   }, []);
   return (<div>
-    <h1>HyPhy Coronavirus Evolution - Sites and Structure</h1>
+    <h1>HyPhy Coronavirus Evolution - Sites (MEME) and Structure</h1>
     {data ? <Visualization data={data} /> : null}
   </div>);
 }
 
-function FubarWrapper(props) {
+function MEMEWrapper(props) {
   const match = useRouteMatch(),
     { dataset } = match.params;
-  return <FubarFetcher dataset={dataset} />;
+  return <MEMEFetcher dataset={dataset} />;
 }
 
-export { FubarFetcher, FubarWrapper };
+export { MEMEWrapper };

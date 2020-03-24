@@ -1,52 +1,26 @@
 import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 import { BrowserRouter, Route, Switch, useRouteMatch } from "react-router-dom";
-import Visualization from "./viz.js";
+import { FubarFetcher, FubarWrapper } from "./fubar.js";
+import { MEMEWrapper } from "./meme.js";
 import * as d3 from "d3";
 import StopWobbling from "alignment.js/prevent_default_patch";
 
 import "./styles.scss";
 
 
-function Fetcher(props) {
-  const [data, setData] = useState(null),
-    { dataset } = props;
-  useEffect(() => {
-    Promise.all([
-      d3.json(`output/${dataset}.fna.FUBAR.json`),
-      d3.text(`output/${dataset}-full.fasta`),
-      d3.text(`input/${dataset}.pdb`),
-      d3.csv(`output/${dataset}-map.csv`)
-    ]).then(data => {
-      setData({
-        fubar: data[0],
-        fasta: data[1],
-        pdb: data[2],
-        indexMap: data[3]
-      });
-    });
-  }, []);
-  return (<div>
-    <h1>HyPhy Coronavirus Evolution</h1>
-    {data ? <Visualization data={data} /> : null}
-  </div>);
-}
-
-function Wrapper(props) {
-  const match = useRouteMatch(),
-    { dataset } = match.params;
-  return <Fetcher dataset={dataset} />;
-}
-
 function App() {
   return (
     <BrowserRouter>
       <Switch>
-        <Route path="/:dataset">
-          <Wrapper />
+        <Route path="/meme/:dataset">
+          <MEMEWrapper />
+        </Route>
+        <Route path="/fubar/:dataset">
+          <FubarWrapper />
         </Route>
         <Route path="/">
-          <Fetcher dataset="S" />
+          <FubarFetcher dataset="S" />
         </Route>
       </Switch>
     </BrowserRouter>

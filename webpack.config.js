@@ -7,6 +7,7 @@ module.exports = {
     path: path.resolve(__dirname, "public/"),
     publicPath: '/'
   },
+  devtool: 'eval-source-map',
   plugins: [
     new HtmlWebpackPlugin({
       title: "HyPhy Coronavirus Visualization"
