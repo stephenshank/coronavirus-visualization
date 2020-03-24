@@ -28,10 +28,14 @@ function molecule(mol) {
 };
 
 const colors = [
-    'red'
+    'red',
+    'blue',
+    'orange'
   ],
   labels = [
     '\u03B1',
+    '\u03B2-',
+    '\u03B2+',
   ];
 
 var mouseDown = 0;
@@ -67,6 +71,9 @@ function Visualization(props) {
     tree_width = width1,
     height = height1 + height2,
     structure_height = height1,
+    colorbar_width = 60,
+    axis_width = 25,
+    structure_width = width1 - colorbar_width - axis_width,
     site_size = 20,
     axis_height = 20,
     padding = site_size / 2,
@@ -84,12 +91,16 @@ function Visualization(props) {
       .domain([1, number_of_sites])
       .range([site_size / 2, full_pixel_width - site_size / 2]),
     tickValues = d3.range(1, number_of_sites, 2),
-    line_data = Array(1).fill().map(d=>Array(number_of_sites).fill(0)),
+    statIndices = [0, 1, 3],
+    line_data = Array(statIndices.length)
+      .fill().map(d=>Array(number_of_sites).fill(0)),
     line_extent = d3.extent(
       _.flatten(meme.MLE.content['0'].map(d=>d3.extent(d)))
     ),
     bound = 10,
-    colorbar_domain = [-bound, 0, bound],
+    hyphy_extent = d3.extent(meme.MLE.content['0'].map(d => d[statIndex])),
+    colorbar_max = Math.min(hyphy_extent[1], bound),
+    colorbar_domain = [0, colorbar_max/2, colorbar_max],
     colorbar_scale = d3.scaleLinear()
       .domain(colorbar_domain)
       .range(['blue', '#EEEEEE', 'red']),
@@ -97,8 +108,8 @@ function Visualization(props) {
       .domain(colorbar_domain)
       .range([structure_height - axis_height, structure_height/2, 10]),
     line_scale = d3.scaleLinear()
-      .domain(colorbar_domain)
-      .range([structure_height - axis_height, structure_height/2, 10]),
+      .domain([0, bound])
+      .range([structure_height - axis_height, 10]),
     line = d3.line()
       .x((d, i) => (i+.5) * site_size+.5)
       .y(d => line_scale(d)),
@@ -117,22 +128,21 @@ function Visualization(props) {
       ]
     })),
     structure_options = {
-      width: tree_width - 60,
+      width: structure_width,
       height: structure_height,
       antialias: true,
       quality : 'medium',
       background: '#FFF'
     },
-    statIndices = d3.range(1),
     pv2hyphy = indexMap.filter(index => index.PDBStructure_index != '-')
       .map(index => +index.original_index),
     pv2full = indexMap.filter(index => index.PDBStructure_index != '-')
       .map(index => +index.full_index);
   sortFASTAAndNewick(remaining_data, tree);
   indexMap.forEach(im => {
-    statIndices.forEach(i => {
+    statIndices.forEach((si, i) => {
       const { full_index, original_index } = im,
-        y = meme.MLE.content['0'][+original_index][i];
+        y = meme.MLE.content['0'][+original_index][si];
       line_data[i][+full_index] = y;
     })
   });
@@ -369,7 +379,7 @@ function Visualization(props) {
             width={100}
             height={200}
           >
-            {statIndices.map(i => {
+            {statIndices.map((si, i) => {
               return (<g key={i} transform={`translate(0, ${i*30})`}>
                 <line
                   x1="0"
@@ -403,10 +413,8 @@ function Visualization(props) {
         <div style={{
           display: "grid",
           gridTemplateRows: `${structure_height}px`,
-          gridTemplateColumns: `${tree_width-60}px 60px`
+          gridTemplateColumns: `${colorbar_width}px ${structure_width}px ${axis_width}px`
         }}>
-          <div id='structure'>
-          </div>
           <div>
             <svg width={80} height={structure_height}>
               <defs>
@@ -433,6 +441,18 @@ function Visualization(props) {
               />
             </svg>
           </div>
+
+          <div id='structure'>
+          </div>
+
+          <div>
+            <svg width={axis_width} height={structure_height}>
+              <AxisLeft
+                transform={`translate(${axis_width-2}, 0)`}
+                scale={line_scale}
+              />
+            </svg>
+          </div>
         </div>
         <div
           id='hyphy-chart-div'
@@ -454,7 +474,7 @@ function Visualization(props) {
                 strokeWidth={1}
               />);
             })}
-            {statIndices.map(i => {
+            {statIndices.map((si, i) => {
               return (<path
                 key={i}
                 stroke={colors[i]}
