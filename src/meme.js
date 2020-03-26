@@ -21,7 +21,7 @@ import Phylotree from "react-phylotree";
 import * as d3 from "d3";
 import pv from "bio-pv";
 
-import { threeToOne, hex2rgb } from "./util";
+import { mapper, threeToOne, hex2rgb } from "./util";
 
 function molecule(mol) {
   return mol;
@@ -82,7 +82,7 @@ function Visualization(props) {
     [ emphasizedSite, setEmphasizedSite ] = useState(null),
     [ bound, setBound ] = useState(10),
     [ transientBound, setTransientBound ] = useState(10),
-    sequence_data = fastaParser(fasta),
+    sequence_data = fasta,
     number_of_sequences = sequence_data.length,
     { number_of_sites } = sequence_data,
     pdb_sequence = [sequence_data[number_of_sequences - 1]],
@@ -594,13 +594,16 @@ function MEMEFetcher(props) {
       d3.json(`/output/${dataset}.fna.MEME.json`),
       d3.text(`/output/${dataset}-full.fasta`),
       d3.text(`/input/${dataset}.pdb`),
-      d3.csv(`/output/${dataset}-map.csv`)
+      d3.text(`/output/${dataset}-AA.fasta`)
     ]).then(data => {
+      const full_fasta = fastaParser(data[1]),
+        base_fasta = fastaParser(data[3]),
+        map = mapper(base_fasta, full_fasta);
       setData({
         meme: data[0],
-        fasta: data[1],
+        fasta: full_fasta,
         pdb: data[2],
-        indexMap: data[3]
+        indexMap: map
       });
     });
   }, []);
