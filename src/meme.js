@@ -264,9 +264,13 @@ function Visualization(props) {
           setStatIndex(key);
           setEmphasizedSite(null);
         }}>
-          <Dropdown.Toggle variant="secondary" id="dropdown-basic">
-            {meme.MLE.headers[statIndex][1]}
-          </Dropdown.Toggle>
+          <Dropdown.Toggle
+            variant="secondary"
+            id="dropdown-basic"
+            dangerouslySetInnerHTML={{
+              __html: meme.MLE.headers[statIndex][1]
+            }}
+          />
           <Dropdown.Menu>
             <Dropdown.Header>
               Evolutionary statistic
