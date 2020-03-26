@@ -47,6 +47,25 @@ document.body.onmouseup = function() {
     mouseDown = 0;
 }
 
+const site_size = 20;
+
+function get_broadcaster(width, height, sequence_data) {
+    const full_pixel_width = sequence_data[0].seq.length * site_size,
+      full_pixel_height = sequence_data.length * site_size;
+  return new ScrollBroadcaster({
+    width: full_pixel_width,
+    height: full_pixel_height,
+    x_pad: width,
+    y_pad: height,
+    bidirectional: [
+      "tree",
+      "alignmentjs-alignment",
+      "pdb-alignment",
+      "hyphy-chart-div"
+    ]
+  });
+}
+
 function Visualization(props) {
   if(!props.data) return <div />;
   const { meme, fasta, pdb, indexMap } = props.data,
@@ -74,7 +93,6 @@ function Visualization(props) {
     colorbar_width = 60,
     axis_width = 25,
     structure_width = width1 - colorbar_width - axis_width,
-    site_size = 20,
     axis_height = 20,
     padding = site_size / 2,
     full_pixel_width = sequence_data
@@ -90,6 +108,10 @@ function Visualization(props) {
     axis_scale = d3.scaleLinear()
       .domain([1, number_of_sites])
       .range([site_size / 2, full_pixel_width - site_size / 2]),
+    [ scrollBroadcaster, setScrollBroadcaster] = useState(() => {
+      return get_broadcaster(width2, height2, remaining_data);
+    }),
+
     tickValues = d3.range(1, number_of_sites, 2),
     statIndices = [0, 1, 3],
     line_data = Array(statIndices.length)
@@ -115,18 +137,6 @@ function Visualization(props) {
       .y(d => line_scale(d)),
     [min_domain, max_domain] = d3.extent(colorbar_data_scale.domain()),
     range_domain = max_domain - min_domain,
-    scroll_broadcaster = useRef(new ScrollBroadcaster({
-      width: full_pixel_width,
-      height: full_pixel_height,
-      x_pad: width - tree_width,
-      y_pad: height - structure_height,
-      bidirectional: [
-        "tree",
-        "alignmentjs-alignment",
-        "pdb-alignment",
-        "hyphy-chart-div"
-      ]
-    })),
     structure_options = {
       width: structure_width,
       height: structure_height,
@@ -148,18 +158,8 @@ function Visualization(props) {
   });
 
   useEffect(() => {
-    scroll_broadcaster.current = new ScrollBroadcaster({
-      width: full_pixel_width,
-      height: full_pixel_height,
-      x_pad: width - tree_width,
-      y_pad: height - structure_height,
-      bidirectional: [
-        "tree",
-        "alignmentjs-alignment",
-        "pdb-alignment",
-        "hyphy-chart-div"
-      ]
-    })
+    const {x_fraction, y_fraction } = scrollBroadcaster.location();
+    scrollBroadcaster.broadcast(x_fraction, y_fraction, 'main');
   }, [width1, width2, height1, height2]);
 
   useEffect(() => {
@@ -230,9 +230,9 @@ function Visualization(props) {
           setColorForAtom(picked.node(), atom, 'yellow');
           const full_index = pv2full[pdb_map[resnum]],
             x_frac = (full_index * site_size - width2/2) / full_pixel_width,
-            y_frac = scroll_broadcaster.current['main'].y_fraction;
+            y_frac = scrollBroadcaster['main'].y_fraction;
           setEmphasizedSite(full_index);
-          scroll_broadcaster.current.broadcast(x_frac, y_frac, 'main');
+          scrollBroadcaster.broadcast(x_frac, y_frac, 'main');
         }
         else{
           prevPicked = null;
@@ -363,6 +363,9 @@ function Visualization(props) {
           setWidth2(transientWidth2);
           setHeight1(transientHeight1);
           setHeight2(transientHeight2);
+          setScrollBroadcaster(
+            get_broadcaster(transientWidth2, transientHeight2, remaining_data)
+          )
         }}>
           Apply
         </Button>
@@ -463,7 +466,7 @@ function Visualization(props) {
           style={{overflowX: "scroll"}}
           onWheel={e => {
             e.preventDefault();
-            scroll_broadcaster.current.handleWheel(e, 'main');
+            scrollBroadcaster.handleWheel(e, 'main');
           }}
         >
           <svg width={full_pixel_width} height={structure_height}>
@@ -520,7 +523,7 @@ function Visualization(props) {
             height={site_size}
             site_size={site_size}
             site_color={nucleotide_color}
-            scroll_broadcaster={scroll_broadcaster.current}
+            scroll_broadcaster={scrollBroadcaster}
             molecule={molecule}
             id={'pdb'}
             disableVerticalScrolling
@@ -529,11 +532,16 @@ function Visualization(props) {
         </div>
         <div
           id="tree"
+          onWheel={e => {
+            e.preventDefault();
+            scrollBroadcaster.handleWheel(e, 'main');
+          }}
           style={{
-          width: tree_width,
-          height: alignment_height,
-          overflowY: "scroll"
-        }}>
+            width: tree_width,
+            height: alignment_height,
+            overflowY: "scroll"
+          }}
+        >
           <svg width={tree_width} height={full_pixel_height}>
             <g transform={`translate(${padding}, ${padding})`}>
               <Phylotree
@@ -555,7 +563,7 @@ function Visualization(props) {
           height={alignment_height}
           site_size={site_size}
           site_color={nucleotide_color}
-          scroll_broadcaster={scroll_broadcaster.current}
+          scroll_broadcaster={scrollBroadcaster}
           molecule={molecule}
           amino_acid
         />
