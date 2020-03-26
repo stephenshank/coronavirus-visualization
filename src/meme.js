@@ -80,6 +80,8 @@ function Visualization(props) {
     [ height2, setHeight2 ] = useState(400),
     [ transientHeight2, setTransientHeight2 ] = useState(400),
     [ emphasizedSite, setEmphasizedSite ] = useState(null),
+    [ bound, setBound ] = useState(10),
+    [ transientBound, setTransientBound ] = useState(10),
     sequence_data = fastaParser(fasta),
     number_of_sequences = sequence_data.length,
     { number_of_sites } = sequence_data,
@@ -119,7 +121,6 @@ function Visualization(props) {
     line_extent = d3.extent(
       _.flatten(meme.MLE.content['0'].map(d=>d3.extent(d)))
     ),
-    bound = 10,
     hyphy_extent = d3.extent(meme.MLE.content['0'].map(d => d[statIndex])),
     colorbar_max = Math.min(hyphy_extent[1], bound),
     colorbar_domain = [0, colorbar_max/2, colorbar_max],
@@ -242,7 +243,7 @@ function Visualization(props) {
       }
     }
     structure_div.addEventListener('mousemove', structureListener);
-  }, [statIndex, width1, height1]);
+  }, [statIndex, width1, height1, bound]);
 
 
   useEffect(() => {
@@ -292,6 +293,7 @@ function Visualization(props) {
           setTransientWidth2(width2);
           setTransientHeight1(height1);
           setTransientHeight2(height2);
+          setTransientBound(bound);
         }}>
           Options
         </Button>
@@ -349,6 +351,17 @@ function Visualization(props) {
                 onChange={e => setTransientHeight2(+e.target.value)}
               />
             </Col>
+            <Form.Label column sm={4}>
+              Plot upper bound
+            </Form.Label>
+            <Col sm={8}>
+              <Form.Control
+                type="number"
+                placeholder="Plot upper bound"
+                value={transientBound}
+                onChange={e => setTransientBound(+e.target.value)}
+              />
+            </Col>
 
           </Form.Group>
         </Form>
@@ -363,6 +376,7 @@ function Visualization(props) {
           setWidth2(transientWidth2);
           setHeight1(transientHeight1);
           setHeight2(transientHeight2);
+          setBound(transientBound);
           setScrollBroadcaster(
             get_broadcaster(transientWidth2, transientHeight2, remaining_data)
           )
