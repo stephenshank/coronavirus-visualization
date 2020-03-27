@@ -477,7 +477,11 @@ function Visualization(props) {
         </div>
         <div
           id='hyphy-chart-div'
-          style={{overflowX: "scroll"}}
+          className='alignmentjs-container'
+          style={{
+            overflow: "hidden scroll",
+            width: width2
+          }}
           onWheel={e => {
             e.preventDefault();
             scrollBroadcaster.handleWheel(e, 'main');
@@ -553,7 +557,7 @@ function Visualization(props) {
           style={{
             width: tree_width,
             height: alignment_height,
-            overflowY: "scroll"
+            overflow: "scroll hidden"
           }}
         >
           <svg width={tree_width} height={full_pixel_height}>
