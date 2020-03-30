@@ -70,7 +70,7 @@ def extract_pdb_fasta(input_pdb, output_fasta):
   with open(output_fasta, 'w') as f:
     f.write('>PDBStructure\n' + sequence)
 
-rule fubar:
+rule meme:
   input:
     'public/input/{dataset}.fna'
   output:
@@ -80,7 +80,7 @@ rule fubar:
     cache='public/input/{dataset}.fna.FUBAR.cache',
   shell:
     '''
-      hyphy fubar --alignment {input}
+      hyphy meme --alignment {input}
       rm {params.cache}
       mv {params.default} {output}
     '''
@@ -118,20 +118,10 @@ rule full_alignment:
   shell:
     "mafft --add {input.pdb} {input.msa} > {output}"
 
-rule indicial_map:
-  input:
-    original=rules.amino_acid_fasta.output[0],
-    added=rules.full_alignment.output[0]
-  output:
-    'public/output/{dataset}-map.csv'
-  run:
-    indicial_mapping(input.original, input.added, output[0])
-
 rule full_dataset:
   input:
     rules.full_alignment.output[0],
-    rules.fubar.output[0],
-    rules.indicial_map.output[0]
+    rules.meme.output[0],
   output:
     "public/output/{dataset}.txt"
   run:

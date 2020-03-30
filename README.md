@@ -24,19 +24,19 @@ conda env create -f environment.yml
 In an environment with SASS support:
 
 ```
-import { render_fubar } from "coronavirus-visualization";
+import { render_meme } from "coronavirus-visualization";
 import "coronavirus-visualization/styles.scss";
 
-render_fubar(
-	"/path/to/fubar/json",
+render_meme(
+	"/path/to/meme/json",
 	"/path/to/full/fasta",
+	"/path/to/base/fasta",
 	"/path/to/pdb/file",
-	"/path/to/index/map",
 	"dom_element_id"
 )
 ```
 
-See `fubar-library-consumer` for a minimal working example.
+See `library-consumer` for a minimal working example.
 
 ### Pipeline
 
@@ -50,6 +50,32 @@ snakemake public/output/$DATASET.txt
 This is a dummy endpoint that will ensure all necessary file are created, running the following pipeline:
 
 <img src="./pipeline.svg">
+
+#### codon_fasta
+Removes tree from FNA file, resulting in codon aware MSA.
+
+#### amino\_acid\_fasta
+Translate codon aware MSA.
+
+#### pdb_fasta
+Extracts 'A' chain from PDB file and writes to a FASTA file.
+See `public/input/S-structure.fasta` for this file.
+
+#### full_alignment
+
+Adds pdb_fasta to the translated MSA, via
+
+```
+mafft --add {input.pdb} {input.msa} > {output}
+```
+
+#### meme
+
+HyPhy's MEME method.
+
+#### full_dataset
+
+Dummy file to ensure all necessary files are appropriately placed.
 
 ### Development
 
