@@ -2765,6 +2765,27 @@ core-util-is@1.0.2, core-util-is@~1.0.0:
   resolved "https://registry.yarnpkg.com/core-util-is/-/core-util-is-1.0.2.tgz#b5fd54220aa2bc5ab57aab7140c940754503c1a7"
   integrity sha1-tf1UIgqivFq1eqtxQMlAdUUDwac=
 
+coronavirus-visualization@0.0.2:
+  version "0.0.2"
+  resolved "https://registry.yarnpkg.com/coronavirus-visualization/-/coronavirus-visualization-0.0.2.tgz#06e07a7af70f160bd371c64a0df6532033d01e04"
+  integrity sha512-W/AXOQpVhbXlj2V+N2ubxVQwLMx7TDordXdZIUujRN5reilMIThPQ3nkoPIU6fKhu7DnLVvQXYv0tlFmqX+HSw==
+  dependencies:
+    "@babel/plugin-proposal-class-properties" "7"
+    alignment.js "0.3.0"
+    axios "^0.19.1"
+    bio-pv "^1.8.1"
+    bootstrap "^4.4.1"
+    d3 "^5.15.0"
+    d3-react-axis "^0.0.3"
+    jquery "^3.4.1"
+    phylotree "1.0.0-alpha.17"
+    react "^16.13.0"
+    react-bootstrap "^1.0.0-beta.17"
+    react-dom "^16.13.0"
+    react-phylotree "0.4.3"
+    react-router-dom "^5.1.2"
+    underscore "^1.9.2"
+
 create-ecdh@^4.0.0:
   version "4.0.3"
   resolved "https://registry.yarnpkg.com/create-ecdh/-/create-ecdh-4.0.3.tgz#c9111b6f33045c4697f144787f9254cdc77c45ff"

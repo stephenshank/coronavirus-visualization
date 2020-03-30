@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import ReactDOM from "react-dom";
 import fastaParser from "alignment.js/helpers/fasta";
 import ScrollBroadcaster from "alignment.js/helpers/ScrollBroadcaster";
 import { phylotree } from "phylotree";
@@ -623,4 +624,27 @@ function MEMEWrapper(props) {
   return <MEMEFetcher dataset={dataset} />;
 }
 
-export { MEMEWrapper };
+function render_meme(meme_url, full_url, base_url, pdb_url, element_id) {
+  Promise.all([
+    d3.json(meme_url),
+    d3.text(full_url),
+    d3.text(base_url),
+    d3.text(pdb_url)
+  ]).then(data => {
+    const full_fasta = fastaParser(data[1]),
+      base_fasta = fastaParser(data[2]),
+      map = mapper(base_fasta, full_fasta),
+      viz_data = {
+        meme: data[0],
+        fasta: full_fasta,
+        indexMap: map,
+        pdb: data[3]
+      };
+    ReactDOM.render(
+      <Visualization data={viz_data} />,
+      document.getElementById(element_id)
+    );
+  });
+}
+
+export { MEMEWrapper, render_meme };

@@ -1,6 +1,6 @@
 {
   "name": "coronavirus-visualization",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "main": "library.js",
   "repository": "coronavirus-visualization",
   "author": "Stephen Shank <sshank314@gmail.com>",
@@ -30,6 +30,7 @@
     "axios": "^0.19.1",
     "bio-pv": "^1.8.1",
     "bootstrap": "^4.4.1",
+    "coronavirus-visualization": "0.0.2",
     "d3": "^5.15.0",
     "d3-react-axis": "^0.0.3",
     "jquery": "^3.4.1",
@@ -44,7 +45,7 @@
   "scripts": {
     "develop": "npx webpack-dev-server --open",
     "library": "BABEL_ENV=library npx babel src --out-dir lib --copy-files && cp {package.json,yarn.lock,README.md} lib",
-    "yalc": "yarn library && cd lib && yalc push",
+    "yalc": "rm -rf lib && yarn library && cd lib && yalc push",
     "test": "npx jest"
   }
 }
