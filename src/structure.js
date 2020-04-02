@@ -8,10 +8,16 @@ var structureListener;
 
 class Structure extends Component {
   componentDidMount() {
+    this.highlightStructure();
+  }
+  componentDidUpdate() {
+    this.highlightStructure();
+  }
+  highlightStructure() {
     const structure_div = document.getElementById('structure'),
       {
         pdb, data, statIndex, indexMap, width, height, scrollBroadcaster,
-        site_size, plotWidth, full_pixel_width
+        site_size, plotWidth, full_pixel_width, scale
       } = this.props, 
       structure_options = {
         width: width,
@@ -42,8 +48,8 @@ class Structure extends Component {
       try {
         const resnum = atom.residue().num(),
           hyphy_index = pv2hyphy[pdb_map[resnum]],
-          hyphy_value = data[hyphy_index][statIndex],
-          color = colorbar_scale(hyphy_value),
+          hyphy_value = data[hyphy_index],
+          color = scale(hyphy_value),
           [r_color, g_color, b_color] = hex2rgb(color);
         out[index] = r_color;
         out[index + 1] = g_color;
