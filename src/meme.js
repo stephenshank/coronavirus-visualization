@@ -23,6 +23,9 @@ import * as d3 from "d3";
 import pv from "bio-pv";
 
 import { mapper, threeToOne, hex2rgb } from "./util";
+import LinePlot from "./lineplot";
+import Tree from "./tree";
+import Structure from "./structure";
 
 function molecule(mol) {
   return mol;
@@ -48,7 +51,11 @@ document.body.onmouseup = function() {
     mouseDown = 0;
 }
 
-const site_size = 20;
+const site_size = 20,
+  axis_width = 25,
+  axis_height = 20,
+  colorbar_width = 60,
+  statIndices = [0, 1, 3];
 
 function get_broadcaster(width, height, sequence_data) {
     const full_pixel_width = sequence_data[0].seq.length * site_size,
@@ -67,7 +74,387 @@ function get_broadcaster(width, height, sequence_data) {
   });
 }
 
-function Visualization(props) {
+function FigureSettings(props) {
+  const [width1, setWidth1] = useState(props.width1);
+  const [width2, setWidth2] = useState(props.width2);
+  const [height1, setHeight1] = useState(props.height1);
+  const [height2, setHeight2] = useState(props.height2);
+  const [bound, setBound] = useState(props.bound);
+  return (<Modal show={true} size="lg">
+    <Modal.Header>
+      <Modal.Title>Figure dimensions</Modal.Title>
+    </Modal.Header>
+    <Modal.Body>
+      <Form>
+        <Form.Group as={Row}>
+          <Form.Label column sm={4}>
+            Structure/tree width
+          </Form.Label>
+          <Col sm={8}>
+            <Form.Control
+              type="number"
+              placeholder="Structure/tree width"
+              value={width1}
+              onChange={e => setWidth1(+e.target.value)}
+            />
+          </Col>
+          <Form.Label column sm={4}>
+            Alignment/plot width
+          </Form.Label>
+          <Col sm={8}>
+            <Form.Control
+              type="number"
+              placeholder="Alignment/plot width"
+              value={width2}
+              onChange={e => setWidth2(+e.target.value)}
+            />
+          </Col>
+          <Form.Label column sm={4}>
+            Structure/plot height
+          </Form.Label>
+          <Col sm={8}>
+            <Form.Control
+              type="number"
+              placeholder="Structure/plot height"
+              value={height1}
+              onChange={e => setHeight1(+e.target.value)}
+            />
+          </Col>
+          <Form.Label column sm={4}>
+            Tree/alignment height
+          </Form.Label>
+          <Col sm={8}>
+            <Form.Control
+              type="number"
+              placeholder="Tree/alignment height"
+              value={height2}
+              onChange={e => setHeight2(+e.target.value)}
+            />
+          </Col>
+          <Form.Label column sm={4}>
+            Plot upper bound
+          </Form.Label>
+          <Col sm={8}>
+            <Form.Control
+              type="number"
+              placeholder="Plot upper bound"
+              value={bound}
+              onChange={e => setBound(+e.target.value)}
+            />
+          </Col>
+        </Form.Group>
+      </Form>
+    </Modal.Body>
+    <Modal.Footer>
+      <Button variant="secondary" onClick={()=>props.closeModal()}>
+        Close
+      </Button>
+      <Button variant="primary" onClick={() => {
+        props.applyModal(width1, width2, height1, height2, bound);
+      }}>
+        Apply
+      </Button>
+    </Modal.Footer>
+  </Modal>);
+}
+
+
+class Legend extends React.Component {
+  shouldComponentUpdate(nextProps) {
+    return false;
+  }
+  render() {
+    return (<div style={{position: 'relative'}}>
+      <div
+        style={{
+          position: 'absolute',
+          right: 10,
+          top: 10
+        }}
+      >
+        <svg
+          width={100}
+          height={200}
+        >
+          {this.props.statIndices.map((si, i) => {
+            return (<g key={i} transform={`translate(0, ${i*30})`}>
+              <line
+                x1="0"
+                x2="20"
+                y1="25"
+                y2="25"
+                stroke={colors[i]}
+                strokeWidth={3}
+              />
+              <text
+                x="25"
+                y="25"
+                alignmentBaseline="middle"
+                textAnchor="start"
+              >
+                {labels[i]}
+              </text>
+            </g>);
+          })}
+        </svg>
+      </div>
+    </div>);
+  }
+}
+
+
+function Colorbar(props) {
+  const { scale, height } = props;
+  return (<svg width={80} height={height}>
+    <defs>
+      <linearGradient id='gradient' x1="0%" x2="0%" y1="100%" y2="0%">
+        {scale.domain().map((value, index) => {
+          return (<stop
+            key={index}
+            offset={100*(value-min_domain)/range_domain + "%"}
+            stopColor={colorbar_scale(value)}
+          />)
+        })}
+      </linearGradient>
+    </defs>
+    <AxisLeft
+      transform='translate(30, 0)'
+      scale={scale}
+    />
+    <rect
+      fill={`url(#gradient)`}
+      x={30}
+      y={0}
+      width={30}
+      height={structure_height - axis_height}
+    />
+  </svg>);
+}
+
+
+class Visualization extends React.Component {
+  constructor(props) {
+    super(props);
+
+    const { meme, fasta, pdb, indexMap } = props.data;
+    this.meme = meme;
+    this.fasta = fasta;
+    this.pdb = pdb;
+    this.indexMap = indexMap;
+    this.getLinePlotData();
+    this.getPhyloData();
+
+    this.state = {
+      width1: 700,
+      width2: 700,
+      height1: 400,
+      height2: 400,
+      statIndex: 0,
+      emphasizedSite: null,
+      showModal: false,
+      bound: 10
+    };
+  }
+  getLinePlotData() {
+    const { meme } = this,
+      { number_of_sites } = this.fasta;
+    this.line_data = Array(statIndices.length)
+      .fill().map(d=>Array(number_of_sites).fill(0));
+    this.line_extent = d3.extent(
+      _.flatten(meme.MLE.content['0'].map(d=>d3.extent(d)))
+    );
+    this.hyphy_extents = statIndices.map(si => {
+      return d3.extent(meme.MLE.content['0'].map(d => d[si]));
+    });
+    this.indexMap.forEach(im => {
+      statIndices.forEach((si, i) => {
+        const { full_index, original_index } = im,
+          y = meme.MLE.content['0'][+original_index][si];
+        this.line_data[i][+full_index] = y;
+      })
+    });
+  }
+  getPhyloData() {
+    const { number_of_sequences, number_of_sites } = this.fasta;
+    this.pdb_sequence = [this.fasta[number_of_sequences - 1]];
+    const remaining_data = this.fasta.slice(0, number_of_sequences - 1),
+      newick = this.meme.input.trees['0'],
+      tree = new phylotree(newick);
+    sortFASTAAndNewick(remaining_data, tree);
+    this.remaining_data = remaining_data;
+    this.tree = tree;
+    this.full_pixel_width = number_of_sites * site_size;
+    this.full_pixel_height = number_of_sequences * site_size;
+  }
+  applyModal(width1, width2, height1, height2, bound) {
+    this.setState({
+      showModal: false,
+      width1: width1,
+      width2: width2,
+      height1: height1,
+      height2: height2,
+      bound: bound
+    });
+  }
+  render() {
+    const {
+        meme, fasta, pdb, indexMap, line_data, pdb_sequence, remaining_data,
+        tree, full_pixel_width, full_pixel_height
+      } = this,
+      {
+        width1, width2, height1, height2, statIndex, showModal,
+        bound, emphasizedSite
+      } = this.state,
+      width = width1 + width2,
+      height = height1 + height2,
+      structure_width = width1 - colorbar_width - axis_width,
+      line_scale = d3.scaleLinear()
+        .domain([0, bound])
+        .range([height1 - axis_height, 10]),
+      scrollBroadcaster = get_broadcaster(width2, height2, remaining_data);
+    this.scrollBroadcaster = scrollBroadcaster;
+    return (<div>
+      <div className="toolbar">
+        <span>
+          <Dropdown onSelect={key => {
+            this.setState({
+              statIndex: key,
+              emphasizedSite: null
+            });
+          }}>
+            <Dropdown.Toggle
+              variant="secondary"
+              id="dropdown-basic"
+              dangerouslySetInnerHTML={{
+                __html: meme.MLE.headers[statIndex][1]
+              }}
+            />
+            <Dropdown.Menu>
+              <Dropdown.Header>
+                Evolutionary statistic
+              </Dropdown.Header>
+              {meme.MLE.headers.map((header, index) => {
+                return (<Dropdown.Item
+                  key={index}
+                  eventKey={index}
+                  dangerouslySetInnerHTML={{ __html: header[1] }}
+                />);
+              })}
+            </Dropdown.Menu>
+          </Dropdown>
+        </span>
+        <span>
+          <Button variant="secondary" onClick={() => {
+            this.setState({
+              showModal: true
+            });
+          }}>
+            Options
+          </Button>
+        </span>
+      </div>
+      {this.state.showModal ? <FigureSettings
+        width1={width1}
+        width2={width2}
+        height1={height1}
+        height2={height2}
+        bound={bound}
+        applyModal={this.applyModal.bind(this)}
+        closeModal={()=>this.setState({showModal: false})}
+      /> : null}
+      <div style={{width: width}}>
+        <Legend statIndices={statIndices} />
+        <div
+          style={{
+            display: "grid",
+            gridTemplateRows: `${height1}px ${site_size}px ${height2}px`,
+            gridTemplateColumns: `${width1}px ${width2}px`
+          }}
+        >
+          <div
+            style={{
+              display: "grid",
+              gridTemplateRows: `${height1}px`,
+              gridTemplateColumns: `${colorbar_width}px ${structure_width}px ${axis_width}px`
+            }}
+          >
+            <div>
+            </div>
+
+            <Structure
+              pdb={pdb}
+              width={structure_width}
+              height={height1}
+              indexMap={indexMap}
+              plotWidth={width2}
+              full_pixel_width={full_pixel_width}
+              setEmphasizedSite={site => this.setState({emphasizedSite: site})}
+              scrollBroadcaster={scrollBroadcaster}
+            />
+
+            <div>
+              <svg width={axis_width} height={height1}>
+                <AxisLeft
+                  transform={`translate(${axis_width-2}, 0)`}
+                  scale={line_scale}
+                />
+              </svg>
+            </div>
+
+          </div>
+          <LinePlot
+            statIndices={statIndices}
+            width={width2}
+            height={height1}
+            full_pixel_width={full_pixel_width}
+            scale={line_scale}
+            data={this.line_data}
+            emphasizedSite={emphasizedSite}
+          />
+          <div>
+            <svg width={width1} height={site_size}>
+              <BaseSequenceAxis
+                translateY={-4}
+                sequence_data={pdb_sequence}
+                label_padding={5}
+                site_size={site_size}
+                width={width1}
+              />
+            </svg>
+          </div>
+          <BaseAlignment
+            sequence_data={pdb_sequence}
+            width={width2}
+            height={site_size}
+            site_size={site_size}
+            site_color={nucleotide_color}
+            scroll_broadcaster={scrollBroadcaster}
+            id={'pdb'}
+            disableVerticalScrolling
+            amino_acid
+          />
+          <Tree
+            full_pixel_height={full_pixel_height}
+            tree={tree}
+            width={width1}
+            height={height2}
+          />
+          <BaseAlignment
+            sequence_data={remaining_data}
+            width={width2}
+            height={height2}
+            site_size={site_size}
+            site_color={nucleotide_color}
+            scroll_broadcaster={scrollBroadcaster}
+            amino_acid
+          />
+        </div>
+      </div>
+    </div>);
+  }
+}
+
+function OldVisualization(props) {
   if(!props.data) return <div />;
   const { meme, fasta, pdb, indexMap } = props.data,
     [ statIndex, setStatIndex ] = useState(0),
@@ -93,10 +480,7 @@ function Visualization(props) {
     tree_width = width1,
     height = height1 + height2,
     structure_height = height1,
-    colorbar_width = 60,
-    axis_width = 25,
     structure_width = width1 - colorbar_width - axis_width,
-    axis_height = 20,
     padding = site_size / 2,
     full_pixel_width = sequence_data
       ? sequence_data[0].seq.length * site_size
@@ -618,6 +1002,41 @@ function MEMEFetcher(props) {
   </div>);
 }
 
+
+function OldMEMEFetcher(props) {
+  const [data, setData] = useState(null),
+    { dataset } = props;
+  useEffect(() => {
+    Promise.all([
+      d3.json(`/output/${dataset}.fna.MEME.json`),
+      d3.text(`/output/${dataset}-full.fasta`),
+      d3.text(`/input/${dataset}.pdb`),
+      d3.text(`/output/${dataset}-AA.fasta`)
+    ]).then(data => {
+      const full_fasta = fastaParser(data[1]),
+        base_fasta = fastaParser(data[3]),
+        map = mapper(base_fasta, full_fasta);
+      setData({
+        meme: data[0],
+        fasta: full_fasta,
+        pdb: data[2],
+        indexMap: map
+      });
+    });
+  }, []);
+  return (<div>
+    <h1>HyPhy Coronavirus Evolution - Sites (MEME) and Structure</h1>
+    {data ? <OldVisualization data={data} /> : null}
+  </div>);
+}
+
+function OldMEMEWrapper(props) {
+  const match = useRouteMatch(),
+    { dataset } = match.params;
+  return <OldMEMEFetcher dataset={dataset} />;
+}
+
+
 function MEMEWrapper(props) {
   const match = useRouteMatch(),
     { dataset } = match.params;
@@ -647,4 +1066,4 @@ function render_meme(meme_url, full_url, base_url, pdb_url, element_id) {
   });
 }
 
-export { MEMEWrapper, render_meme };
+export { OldMEMEWrapper, MEMEWrapper, render_meme };
