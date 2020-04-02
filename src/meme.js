@@ -57,6 +57,18 @@ const site_size = 20,
   colorbar_width = 60,
   statIndices = [0, 1, 3];
 
+function quantile(arr, q) {
+    const sorted = arr.sort((a,b) => a - b),
+      pos = (sorted.length - 1) * q,
+      base = Math.floor(pos),
+      rest = pos - base;
+    if (sorted[base + 1] !== undefined) {
+        return sorted[base] + rest * (sorted[base + 1] - sorted[base]);
+    } else {
+        return sorted[base];
+    }
+};
+
 function get_broadcaster(width, height, sequence_data) {
     const full_pixel_width = sequence_data[0].seq.length * site_size,
       full_pixel_height = sequence_data.length * site_size;
@@ -251,7 +263,7 @@ class Visualization extends React.Component {
       height2: 400,
       statIndex: 0,
       showModal: false,
-      bound: 10
+      bound: this.getInitialBound()
     };
   }
   getLinePlotData() {
@@ -284,6 +296,11 @@ class Visualization extends React.Component {
     this.tree = tree;
     this.full_pixel_width = number_of_sites * site_size;
     this.full_pixel_height = number_of_sequences * site_size;
+  }
+  getInitialBound() {
+    const flat_nonzero_data = _.flatten(this.line_data)
+      .filter(x => x > 0);
+    return quantile(flat_nonzero_data, .8);
   }
   applyModal(width1, width2, height1, height2, bound) {
     this.setState({
@@ -406,6 +423,7 @@ class Visualization extends React.Component {
             full_pixel_width={full_pixel_width}
             scale={line_scale}
             data={this.line_data}
+            scrollBroadcaster={scrollBroadcaster}
           />
           <div>
             <svg width={width1} height={site_size}>
@@ -415,6 +433,7 @@ class Visualization extends React.Component {
                 label_padding={5}
                 site_size={site_size}
                 width={width1}
+                scrollBroadcaster={scrollBroadcaster}
               />
             </svg>
           </div>
@@ -434,6 +453,7 @@ class Visualization extends React.Component {
             tree={tree}
             width={width1}
             height={height2}
+            scrollBroadcaster={scrollBroadcaster}
           />
           <BaseAlignment
             sequence_data={remaining_data}

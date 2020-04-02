@@ -27,7 +27,7 @@ class LinePlot extends Component {
     const { emphasizedSite } = this.state,
       {
         statIndices, width, height, full_pixel_width, scale, data, site_size,
-        colors, axis_height
+        colors, axis_height, scrollBroadcaster
       } = this.props,
       number_of_sites =  data[0].length,
       axis_scale = scaleLinear()
