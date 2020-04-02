@@ -250,7 +250,6 @@ class Visualization extends React.Component {
       height1: 400,
       height2: 400,
       statIndex: 0,
-      emphasizedSite: null,
       showModal: false,
       bound: 10
     };
@@ -303,7 +302,7 @@ class Visualization extends React.Component {
       } = this,
       {
         width1, width2, height1, height2, statIndex, showModal,
-        bound, emphasizedSite
+        bound
       } = this.state,
       width = width1 + width2,
       height = height1 + height2,
@@ -318,8 +317,7 @@ class Visualization extends React.Component {
         <span>
           <Dropdown onSelect={key => {
             this.setState({
-              statIndex: key,
-              emphasizedSite: null
+              statIndex: key
             });
           }}>
             <Dropdown.Toggle
@@ -388,7 +386,6 @@ class Visualization extends React.Component {
               indexMap={indexMap}
               plotWidth={width2}
               full_pixel_width={full_pixel_width}
-              setEmphasizedSite={site => this.setState({emphasizedSite: site})}
               scrollBroadcaster={scrollBroadcaster}
             />
 
@@ -409,7 +406,6 @@ class Visualization extends React.Component {
             full_pixel_width={full_pixel_width}
             scale={line_scale}
             data={this.line_data}
-            emphasizedSite={emphasizedSite}
           />
           <div>
             <svg width={width1} height={site_size}>

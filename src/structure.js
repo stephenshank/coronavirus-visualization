@@ -11,7 +11,7 @@ class Structure extends Component {
     const structure_div = document.getElementById('structure'),
       {
         pdb, data, statIndex, indexMap, width, height, scrollBroadcaster,
-        site_size, setEmphasizedSite, plotWidth, full_pixel_width
+        site_size, plotWidth, full_pixel_width
       } = this.props, 
       structure_options = {
         width: width,
@@ -91,12 +91,18 @@ class Structure extends Component {
           const full_index = pv2full[pdb_map[resnum]],
             x_frac = (full_index * site_size - plotWidth/2) / full_pixel_width,
             y_frac = scrollBroadcaster['main'].y_fraction;
-          setEmphasizedSite(full_index);
           scrollBroadcaster.broadcast(x_frac, y_frac, 'main');
+          document.getElementById('hyphy-chart-div')
+            .dispatchEvent(new CustomEvent("select_site", {
+              detail: full_index
+            }));
         }
         else{
           prevPicked = null;
-          setEmphasizedSite(null);
+          document.getElementById('hyphy-chart-div')
+            .dispatchEvent(new CustomEvent("select_site", {
+              detail: null
+            }));
         }
         viewer.requestRedraw();
       }

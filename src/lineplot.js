@@ -4,15 +4,27 @@ import { scaleLinear, line, range } from "d3";
 import $ from "jquery";
 
 class LinePlot extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      emphasizedSite: null
+    };
+  }
   componentDidMount() {
+    const { setState } = this;
     document
-      .getElementById('tree')
+      .getElementById('hyphy-chart-div')
       .addEventListener("alignmentjs_wheel_event", function(e) {
-        $('#tree').scrollTop(e.detail.y_pixel);
+        $('#hyphy-chart-div').scrollLeft(e.detail.x_pixel);
+      });
+    document
+      .getElementById('hyphy-chart-div')
+      .addEventListener("select_site", e => {
+        this.setState({ emphasizedSite: e.detail });
       });
   }
   render() {
-    const { emphasizedSite } = this.props,
+    const { emphasizedSite } = this.state,
       {
         statIndices, width, height, full_pixel_width, scale, data, site_size,
         colors, axis_height

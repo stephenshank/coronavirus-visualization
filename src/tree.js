@@ -10,9 +10,9 @@ class Tree extends Component {
   }
   componentDidMount() {
     document
-      .getElementById('hyphy-chart-div')
+      .getElementById('tree')
       .addEventListener("alignmentjs_wheel_event", function(e) {
-        $('#hyphy-chart-div').scrollLeft(e.detail.x_pixel);
+        $('#tree').scrollTop(e.detail.y_pixel);
       });
   }
   render() {
