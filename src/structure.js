@@ -8,16 +8,22 @@ var structureListener;
 
 class Structure extends Component {
   componentDidMount() {
+    this.layout();
     this.highlightStructure();
   }
-  componentDidUpdate() {
+  componentDidUpdate(prevProps) {
+    const new_width = this.props.width != prevProps.width,
+      new_height = this.props.height != prevProps.height,
+      new_layout = new_width || new_height;
+    if(new_layout) {
+      this.layout();
+    }
     this.highlightStructure();
   }
-  highlightStructure() {
+  layout() {
     const structure_div = document.getElementById('structure'),
       {
-        pdb, data, statIndex, indexMap, width, height, scrollBroadcaster,
-        site_size, plotWidth, full_pixel_width, scale
+        pdb, data, statIndex, indexMap, width, height
       } = this.props, 
       structure_options = {
         width: width,
@@ -27,23 +33,28 @@ class Structure extends Component {
         background: '#FFF'
       };
     structure_div.innerHTML = '';
-    structure_div.removeEventListener('mousemove', structureListener);
-    const viewer = pv.Viewer(structure_div, structure_options),
-      structure = pv.io.pdb(pdb, structure_options),
-      chain = structure.select({chain: 'A'}),
-      geom = viewer.cartoon('protein', chain);
-    viewer.autoZoom();
+    this.viewer = pv.Viewer(structure_div, structure_options);
+    const structure = pv.io.pdb(pdb, structure_options),
+      chain = structure.select({chain: 'A'});
+    this.geom = this.viewer.cartoon('protein', chain);
+    this.viewer.autoZoom();
     const pdb_map = {};
     chain._chains[0]._residues.forEach((res, i) => {
       if(!(threeToOne[res._residue._name] == '*')) {
         pdb_map[res.num()] = i;
       }
     });
-    const pv2hyphy = indexMap.filter(index => index.PDBStructure_index != '-')
+    this.pv2hyphy = indexMap.filter(index => index.PDBStructure_index != '-')
       .map(index => +index.original_index),
-    pv2full = indexMap.filter(index => index.PDBStructure_index != '-')
+    this.pv2full = indexMap.filter(index => index.PDBStructure_index != '-')
       .map(index => +index.full_index);
-
+    this.pdb_map = pdb_map;
+    this.structure_div = structure_div;
+  }
+  highlightStructure() {
+    const { pv2hyphy, pv2full, pdb_map, geom, viewer, structure_div } = this,
+      { scrollBroadcaster, site_size, plotWidth, full_pixel_width, scale, data } = this.props;
+    structure_div.removeEventListener('mousemove', structureListener);
     geom.colorBy(new pv.color.ColorOp(function(atom, out, index) {
       try {
         const resnum = atom.residue().num(),
@@ -61,6 +72,7 @@ class Structure extends Component {
         )
       }
     }));
+    viewer.requestRedraw();
     function setColorForAtom(go, atom, color){
       var view = go.structure().createEmptyView();
       view.addAtom(atom);

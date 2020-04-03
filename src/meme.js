@@ -340,7 +340,8 @@ class Visualization extends React.Component {
       colorbar_domain = [ 0, colorbar_min, colorbar_middle, colorbar_bound ],
       colorbar_scale = d3.scaleLinear()
         .domain(colorbar_domain)
-        .range(['blue', 'blue', '#EEEEEE', 'red']);
+        .range(['#EEEEEE', '#EEEEEE', 'purple', 'red'])
+        .clamp(true);
     this.scrollBroadcaster = scrollBroadcaster;
     return (<div>
       <div className="toolbar">
