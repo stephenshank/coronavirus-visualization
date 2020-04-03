@@ -52,7 +52,7 @@ document.body.onmouseup = function() {
 }
 
 const site_size = 20,
-  axis_width = 25,
+  axis_width = 50,
   axis_height = 20,
   colorbar_width = 60,
   statIndices = [0, 1, 3];
@@ -426,6 +426,15 @@ class Visualization extends React.Component {
 
             <div>
               <svg width={axis_width} height={height1}>
+                <text
+                  x={15}
+                  y={height1/2}
+                  alignmentBaseline="middle"
+                  textAnchor="middle"
+                  transform={`rotate(-90 15 ${height1/2})`}
+                >
+                  Evolutionary rate
+                </text>
                 <AxisLeft
                   transform={`translate(${axis_width-2}, 0)`}
                   scale={line_scale}
