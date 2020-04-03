@@ -74,7 +74,7 @@ rule meme:
   input:
     'public/input/{dataset}.fna'
   output:
-    'public/output/{dataset}.fna.FUBAR.json'
+    'public/output/{dataset}.fna.MEME.json'
   params:
     default='public/input/{dataset}.fna.FUBAR.json',
     cache='public/input/{dataset}.fna.FUBAR.cache',
