@@ -1,6 +1,6 @@
 {
   "name": "coronavirus-visualization",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "main": "library.js",
   "repository": "coronavirus-visualization",
   "author": "Stephen Shank <sshank314@gmail.com>",

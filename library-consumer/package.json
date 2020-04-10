@@ -13,7 +13,7 @@
     "webpack-dev-server": "^3.10.3"
   },
   "dependencies": {
-    "coronavirus-visualization": "0.0.2"
+    "coronavirus-visualization": "0.0.3"
   },
   "scripts": {
     "develop": "npx webpack-dev-server --open"

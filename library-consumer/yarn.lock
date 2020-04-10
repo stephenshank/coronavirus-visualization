@@ -1526,6 +1526,28 @@ coronavirus-visualization@0.0.2:
     react-router-dom "^5.1.2"
     underscore "^1.9.2"
 
+coronavirus-visualization@0.0.3:
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/coronavirus-visualization/-/coronavirus-visualization-0.0.3.tgz#06148e607db79550b88c6a36fb88b88aba46a11d"
+  integrity sha512-iQ1480ov35ox7SKAnF5Gww3nDrGnIltGfZRL1DVvaEM8sgDe9+CsoiiyfMmDRnh4M+gvEaUDuiYqI3r8+1zcpw==
+  dependencies:
+    "@babel/plugin-proposal-class-properties" "7"
+    alignment.js "0.3.0"
+    axios "^0.19.1"
+    bio-pv "^1.8.1"
+    bootstrap "^4.4.1"
+    coronavirus-visualization "0.0.2"
+    d3 "^5.15.0"
+    d3-react-axis "^0.0.3"
+    jquery "^3.4.1"
+    phylotree "1.0.0-alpha.17"
+    react "^16.13.0"
+    react-bootstrap "^1.0.0-beta.17"
+    react-dom "^16.13.0"
+    react-phylotree "0.4.3"
+    react-router-dom "^5.1.2"
+    underscore "^1.9.2"
+
 create-ecdh@^4.0.0:
   version "4.0.3"
   resolved "https://registry.yarnpkg.com/create-ecdh/-/create-ecdh-4.0.3.tgz#c9111b6f33045c4697f144787f9254cdc77c45ff"
