@@ -3,6 +3,7 @@ import ReactDOM from "react-dom";
 import { BrowserRouter, Route, Switch, useRouteMatch } from "react-router-dom";
 import { FubarFetcher, FubarWrapper } from "./fubar.js";
 import { MEMEWrapper } from "./meme.js";
+import { RASCLWrapper } from "./rascl.js";
 import { SelectionRecombinationWrapper } from "./selection-recombination";
 import * as d3 from "d3";
 import StopWobbling from "alignment.js/prevent_default_patch";
@@ -22,6 +23,9 @@ function App() {
         </Route>
         <Route path="/selection-recombination/:dataset">
           <SelectionRecombinationWrapper />
+        </Route>
+        <Route path="/rascl/:dataset">
+          <RASCLWrapper />
         </Route>
         <Route path="/">
           <FubarFetcher dataset="S" />
