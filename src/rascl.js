@@ -47,7 +47,10 @@ function Visualization(props) {
       ]
     });
   return (
-    <div id="alignmentjs-main-div">
+    <div
+      id="alignmentjs-main-div"
+      style={{width: width, height: height}}
+    >
       <Placeholder width={tree_width} height={axis_height} />
       <SiteAxis
         width={alignment_width}
