@@ -40,7 +40,7 @@
     "react-dom": "^16.13.0",
     "react-phylotree": "^0.5.0",
     "react-router-dom": "^5.1.2",
-    "underscore": "^1.9.2"
+    "underscore": "^1.12.1"
   },
   "scripts": {
     "develop": "npx webpack-dev-server --open",
