@@ -33,7 +33,7 @@
     "coronavirus-visualization": "0.0.2",
     "d3": "^5.15.0",
     "d3-react-axis": "^0.0.3",
-    "jquery": "^3.4.1",
+    "jquery": "^3.5.0",
     "phylotree": "1",
     "react": "^16.13.0",
     "react-bootstrap": "^1.0.0-beta.17",
